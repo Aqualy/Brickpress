@@ -97,6 +97,59 @@ describe('grid geometry', () => {
     expect(canPlace(doc, [placed('3070', 1, 1)])).toBe(true);
     expect(canPlace(doc, [placed('3070', 0, 1)])).toBe(false);
   });
+  it('fits the round 1×1 quarter into a quarter-ring cutout at every rotation and reflection', () => {
+    for (const rotation of [0, 90, 180, 270]) {
+      for (const mirrorX of [false, true])
+        for (const mirrorY of [false, true]) {
+          const doc = createDocument();
+          const corner = [
+            [0, 0],
+            [1, 0],
+            [1, 1],
+            [0, 1]
+          ][rotation / 90];
+          const ring = { ...placed('27925', 4, 4, rotation), uid: 'ring', mirrorX, mirrorY };
+          const quarter = {
+            ...placed(
+              '25269',
+              4 + (mirrorX ? 1 - corner[0] : corner[0]),
+              4 + (mirrorY ? 1 - corner[1] : corner[1]),
+              rotation
+            ),
+            uid: 'quarter',
+            mirrorX,
+            mirrorY
+          };
+          doc.passes[0].pieces = [ring];
+          expect(canPlace(doc, [quarter])).toBe(true);
+          expect(canPlace(doc, [{ ...quarter, rotation: (rotation + 180) % 360 }])).toBe(false);
+          expect(canPlace(doc, [placed('3070', quarter.x, quarter.y)])).toBe(false);
+          doc.passes[0].pieces = [quarter];
+          expect(canPlace(doc, [ring])).toBe(true);
+        }
+    }
+  });
+  it('checks actual curved surface overlaps within candidate groups and across hidden passes', () => {
+    const doc = createDocument();
+    const ring = { ...placed('27925', 4, 4), uid: 'ring' };
+    const quarter = { ...placed('25269', 4, 4), uid: 'quarter' };
+    expect(canPlace(doc, [ring, quarter])).toBe(true);
+    expect(canPlace(doc, [ring, quarter, { ...quarter, uid: 'duplicate' }])).toBe(false);
+    doc.passes[0].pieces = [ring, quarter];
+    doc.passes[0].visible = false;
+    doc.passes[0].locked = true;
+    expect(canPlace(doc, [placed('3070', 4, 4)])).toBe(false);
+    expect(canPlace(doc, [quarter], new Set(['quarter']))).toBe(true);
+  });
+  it('allows complementary triangles but rejects solid containment and identical curved surfaces', () => {
+    const doc = createDocument();
+    doc.passes[0].pieces = [placed('35787', 4, 4)];
+    expect(canPlace(doc, [placed('35787', 4, 4, 180)])).toBe(true);
+    expect(canPlace(doc, [placed('3068', 4, 4)])).toBe(false);
+    doc.passes[0].pieces = [placed('98138', 4, 4)];
+    expect(canPlace(doc, [placed('98138', 4, 4)])).toBe(false);
+    expect(canPlace(doc, [placed('98138', 5, 4)])).toBe(true);
+  });
   it('checks rotated masks, candidates, bounds and explicit overlap', () => {
     const doc = createDocument();
     doc.passes[0].pieces = [placed('3069', 0, 0, 90)];
@@ -131,6 +184,15 @@ describe('document persistence', () => {
     const doc = createDocument(true);
     expect(parseDocument(serializeDocument(doc))).toEqual(doc);
     expect(doc.passes.flatMap((p) => p.pieces).length).toBeGreaterThan(30);
+  });
+  it('round-trips fitted curved pieces with overlap disabled', () => {
+    const doc = createDocument();
+    doc.passes[0].pieces = [
+      { ...placed('27925', 4, 4), uid: 'ring' },
+      { ...placed('25269', 4, 4), uid: 'quarter' }
+    ];
+    expect(doc.options.allowOverlap).toBe(false);
+    expect(parseDocument(serializeDocument(doc))).toEqual(doc);
   });
   it('creates an identical starter document across server and client', () => {
     expect(createDocument(true)).toEqual(createDocument(true));

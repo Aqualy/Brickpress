@@ -682,3 +682,69 @@ test('piece tooltips expose catalog metadata on keyboard focus and dismiss with 
   await expect(incompatible).toBeFocused();
   await count(page, 0);
 });
+
+test('a quarter tile fits a quarter-ring cutout while real overlaps remain blocked', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.name = 'Quarter-ring fit';
+  doc.board = { width: 8, height: 8 };
+  doc.options.grid = 'squares';
+  doc.passes[0].pieces = [{ uid: 'ring', pieceId: '27925', x: 3, y: 3, rotation: 0, seed: 171 }];
+  const inset = makePass('#005ac5', 'Quarter inset');
+  doc.passes.push(inset);
+  await start(page, doc);
+  await page.getByRole('button', { name: 'Use Quarter inset', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Place Tile Round 1×1 Quarter, 25269', exact: true })
+    .click();
+  await clickStud(page, 3, 3);
+  await count(page, 2);
+  const fitted = await documentState(page);
+  expect(fitted.options.allowOverlap).toBe(false);
+  expect(fitted.passes.find((pass) => pass.id === inset.id)!.pieces[0]).toMatchObject({
+    pieceId: '25269',
+    x: 3,
+    y: 3,
+    rotation: 0
+  });
+  // Check the actual browser SVG fills, independently of the collision engine.
+  const sharedInterior = await page.evaluate(() => {
+    const svg = document.querySelector<SVGSVGElement>('.artboard')!;
+    const paths = Array.from(svg.querySelectorAll<SVGPathElement>('[data-uid] path'));
+    const world = svg.getScreenCTM()!;
+    const inverse = paths.map((path) => path.getScreenCTM()!.inverse());
+    let shared = 0;
+    for (let y = 0; y < 100; y++)
+      for (let x = 0; x < 100; x++) {
+        const point = new DOMPoint(3 + (x + 0.5) / 50, 3 + (y + 0.5) / 50).matrixTransform(world);
+        if (paths.every((path, i) => path.isPointInFill(point.matrixTransform(inverse[i]))))
+          shared++;
+      }
+    return shared;
+  });
+  expect(sharedInterior).toBe(0);
+  await page.keyboard.press('Escape');
+  await page.mouse.move(700, 80);
+  await page.screenshot({ path: 'artifacts/quarter-ring-fit.png' });
+  await page.getByRole('button', { name: 'Place Tile 1×1, 3070', exact: true }).click();
+  await clickStud(page, 4, 3);
+  await expect(page.locator('.toast')).toContainText('overlaps');
+  await count(page, 2);
+  await page.keyboard.press('Control+z');
+  await count(page, 1);
+  await page.keyboard.press('Control+Shift+z');
+  await count(page, 2);
+  await grid(page);
+  await page.getByLabel('Allow overlap').check();
+  await page.getByLabel('Allow overlap').uncheck();
+  await expect(page.getByLabel('Allow overlap')).not.toBeChecked();
+  await page.keyboard.press('Escape');
+  await saved(page);
+  // A fresh tab recovers storage without re-running this page's fixture init script.
+  const recovered = await page.context().newPage();
+  await recovered.goto('/');
+  await count(recovered, 2);
+  expect((await documentState(recovered)).options.allowOverlap).toBe(false);
+  await recovered.close();
+});

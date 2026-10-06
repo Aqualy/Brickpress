@@ -1,5 +1,6 @@
 import { getPiece, surfaceScale, type LetterpressPiece } from '../catalog/catalog';
 import type { PlacedPiece, PressDocument } from '../types/document';
+import { surfacesOverlap } from './silhouette';
 
 const maskCache = new Map<string, number[][]>();
 export const normalizeRotation = (r: number) => ((r % 360) + 360) % 360;
@@ -44,20 +45,34 @@ export function canPlace(
   candidates: PlacedPiece[],
   ignored = new Set<string>()
 ): boolean {
-  const occupied = new Set<string>();
+  const occupied = new Map<string, PlacedPiece[]>();
+  const register = (p: PlacedPiece, cells = occupiedCells(p)) => {
+    for (const cell of cells) {
+      const owners = occupied.get(cell);
+      if (owners) owners.push(p);
+      else occupied.set(cell, [p]);
+    }
+  };
   if (!doc.options.allowOverlap)
     for (const pass of doc.passes)
       for (const p of pass.pieces) {
-        if (!ignored.has(p.uid)) for (const cell of occupiedCells(p)) occupied.add(cell);
+        if (!ignored.has(p.uid)) register(p);
       }
   for (const p of candidates) {
     if (!getPiece(p.pieceId) || !Number.isInteger(p.x) || !Number.isInteger(p.y)) return false;
     const b = bounds(p);
     if (b.x < 0 || b.y < 0 || b.x + b.width > doc.board.width || b.y + b.height > doc.board.height)
       return false;
-    for (const cell of occupiedCells(p)) {
-      if (!doc.options.allowOverlap && occupied.has(cell)) return false;
-      occupied.add(cell);
+    if (!doc.options.allowOverlap) {
+      const cells = occupiedCells(p);
+      const checked = new Set<PlacedPiece>();
+      for (const cell of cells)
+        for (const other of occupied.get(cell) ?? []) {
+          if (checked.has(other)) continue;
+          checked.add(other);
+          if (surfacesOverlap(p, other)) return false;
+        }
+      register(p, cells);
     }
   }
   return true;
