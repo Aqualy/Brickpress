@@ -92,7 +92,7 @@
       <Tabs.Content value="pieces" class="piece-tab" tabindex={-1}>
         <div class="palette-top">
           <label class="search-field"
-            ><Icon name="search" size={19} /><Input
+            ><Icon name="search" size={16} /><Input
               placeholder="Search pieces…"
               aria-label="Search pieces"
               bind:value={query}

@@ -61,6 +61,7 @@
           max={key === 'brightness' ? 1.2 : 1}
           step=".01"
           value={editor.doc.paper[key]}
+          style:--progress={`${((editor.doc.paper[key] - (key === 'brightness' ? 0.7 : 0)) / (key === 'brightness' ? 0.5 : 1)) * 100}%`}
           onchange={(e) => editor.commit((doc) => (doc.paper[key] = Number(e.currentTarget.value)))}
         /></label
       >

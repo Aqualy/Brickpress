@@ -246,6 +246,122 @@ test('keyboard piece sampling stays scoped to the canvas and Brickpress notices 
   await expect(page.getByRole('button', { name: 'Main menu', exact: true })).toBeFocused();
 });
 
+test('palette tabs keep headers, searches and controls aligned across desktop and drawer layouts', async ({
+  page
+}) => {
+  await start(page);
+  for (const width of [1448, 1100, 320]) {
+    await page.setViewportSize({ width, height: 960 });
+    if (width < 1000) await page.getByRole('button', { name: 'Open Pieces', exact: true }).click();
+    const palette = page.locator('.palette-panel');
+    const geometry = () =>
+      palette.evaluate((panel) => {
+        const activeContent = panel.querySelector('[role="tabpanel"][data-state="active"]')!;
+        const rect = (selector: string) => {
+          const element = selector.startsWith('.search-field')
+            ? activeContent.querySelector(selector)!
+            : panel.querySelector(selector)!;
+          const { x, y, width, height } = element.getBoundingClientRect();
+          return { x, y, width, height };
+        };
+        const title = panel.querySelector('h2')!;
+        const input = activeContent.querySelector('.search-field input')!;
+        return {
+          header: rect('.panel-title'),
+          tabs: rect('.palette-library-tabs'),
+          search: rect('.search-field'),
+          icon: rect('.search-field svg'),
+          titleX: title.getBoundingClientRect().x,
+          titleY: title.getBoundingClientRect().y,
+          font: getComputedStyle(input).font,
+          radius: getComputedStyle(activeContent.querySelector('.search-field')!).borderRadius
+        };
+      });
+    await page.getByRole('tab', { name: 'Pieces', exact: true }).click();
+    const piecesGeometry = await geometry();
+    await palette.screenshot({ path: `artifacts/palette-pieces-${width}.png` });
+    await page.getByRole('tab', { name: 'Presets', exact: true }).click();
+    expect(await geometry()).toEqual(piecesGeometry);
+    const actions = await page.locator('.preset-actions button').evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const { y, height } = button.getBoundingClientRect();
+        return { y, height };
+      })
+    );
+    expect(actions).toHaveLength(3);
+    expect(
+      actions.every(
+        (button) => button.height === piecesGeometry.search.height && button.y === actions[0].y
+      )
+    ).toBe(true);
+    const paletteTabs = await page
+      .locator('.palette-library-tabs [role="tab"]')
+      .evaluateAll((tabs) =>
+        tabs.map((tab) => ({
+          height: tab.getBoundingClientRect().height,
+          fontSize: getComputedStyle(tab).fontSize
+        }))
+      );
+    expect(paletteTabs.every((tab) => tab.height === 32 && tab.fontSize === '12px')).toBe(true);
+    await palette.screenshot({ path: `artifacts/palette-presets-${width}.png` });
+    if (width < 1000) {
+      await page.keyboard.press('Escape');
+      await page.getByRole('button', { name: 'Open Properties', exact: true }).click();
+    }
+    let inspectorFrame: { x: number; y: number; width: number; height: number } | undefined;
+    for (const name of ['Properties', 'Layers', 'Export']) {
+      await page.getByRole('tab', { name, exact: true }).click();
+      const frame = (await page.locator('.inspector-tabs').boundingBox())!;
+      if (inspectorFrame) expect(frame).toEqual(inspectorFrame);
+      inspectorFrame = frame;
+      const styles = await page.locator('.inspector-tabs [role="tab"]').evaluateAll((tabs) =>
+        tabs.map((tab) => ({
+          height: tab.getBoundingClientRect().height,
+          fontSize: getComputedStyle(tab).fontSize
+        }))
+      );
+      expect(styles).toHaveLength(3);
+      for (const style of styles) expect(style).toEqual(paletteTabs[0]);
+      expect(
+        await page
+          .locator('.inspector-content [role="tabpanel"][data-state="active"] .property-section')
+          .first()
+          .evaluate((section) => {
+            const style = getComputedStyle(section);
+            return [style.paddingLeft, style.paddingRight];
+          })
+      ).toEqual(['16px', '16px']);
+      await page
+        .locator('.inspector-panel')
+        .screenshot({ path: `artifacts/inspector-${name.toLowerCase()}-${width}.png` });
+    }
+    if (width < 1000) await page.keyboard.press('Escape');
+  }
+  // Resizing to the minimum panel width must preserve one 32px action row.
+  await page.setViewportSize({ width: 1448, height: 960 });
+  const handle = page.getByRole('separator', { name: 'Resize Pieces panel', exact: true });
+  await expect
+    .poll(async () => (await page.locator('.palette-panel').boundingBox())!.width)
+    .toBeGreaterThan(250);
+  await handle.focus();
+  // Stop at the minimum width; another arrow intentionally collapses the panel.
+  for (let i = 0; i < 4; i++) await handle.press('ArrowLeft');
+  expect((await page.locator('.palette-panel').boundingBox())!.width).toBeCloseTo(208, 0);
+  await page.getByRole('tab', { name: 'Presets', exact: true }).click();
+  const compactActions = await page.locator('.preset-actions button').evaluateAll((buttons) =>
+    buttons.map((button) => {
+      const { y, height } = button.getBoundingClientRect();
+      return { y, height };
+    })
+  );
+  expect(
+    compactActions.every((button) => button.height === 32 && button.y === compactActions[0].y)
+  ).toBe(true);
+  expect(
+    await page.locator('.palette-panel').evaluate((panel) => panel.scrollWidth <= panel.clientWidth)
+  ).toBe(true);
+});
+
 test('all 41 catalog pieces can be found and placed with their supplied silhouette', async ({
   page
 }) => {

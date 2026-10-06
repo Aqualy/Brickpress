@@ -39,14 +39,15 @@
         onchange={(e) => editor.updateTrace({ visible: e.currentTarget.checked })}
       /></label
     >
-    <label class="field-label"
-      >Opacity · {Math.round(editor.trace.opacity * 100)}%<input
+    <label class="slider-field"
+      ><span>Opacity<output>{Math.round(editor.trace.opacity * 100)}%</output></span><input
         aria-label="Tracing image opacity"
         type="range"
         min="0"
         max="100"
         step="1"
         value={editor.trace.opacity * 100}
+        style:--progress={`${editor.trace.opacity * 100}%`}
         oninput={(e) => editor.updateTrace({ opacity: Number(e.currentTarget.value) / 100 })}
       /></label
     >

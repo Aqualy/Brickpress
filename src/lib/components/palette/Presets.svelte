@@ -57,6 +57,13 @@
     aria-label="Import composition presets file"
     onchange={importFile}
   />
+  <label class="search-field"
+    ><Icon name="search" size={16} /><Input
+      aria-label="Search presets"
+      placeholder="Search presets…"
+      bind:value={query}
+    /></label
+  >
   <div class="preset-actions">
     <Popover
       label="Save composition preset"
@@ -64,7 +71,7 @@
       width={280}
       className="preset-save-button"
     >
-      {#snippet trigger()}<Icon name="plus" size={16} /> Save preset{/snippet}
+      {#snippet trigger()}<Icon name="plus" size={16} /><span>Save preset</span>{/snippet}
       <form onsubmit={save}>
         <h3>Save composition</h3>
         <label class="field-label"
@@ -108,13 +115,6 @@
       onclick={() => exportPresets(editor.presets)}><Icon name="export" size={17} /></Button
     >
   </div>
-  <label class="search-field"
-    ><Icon name="search" size={17} /><Input
-      aria-label="Search presets"
-      placeholder="Search presets…"
-      bind:value={query}
-    /></label
-  >
   <p class="fine-print">
     Drag onto the canvas, or choose a preset and use arrows + Enter. <kbd>R</kbd> rotates. Canvas size
     stays unchanged.
