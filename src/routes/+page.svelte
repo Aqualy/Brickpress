@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { Editor } from '$lib/stores/editor.svelte';
   import { AUTOSAVE_KEY } from '$lib/persistence/document';
+  import { PRESETS_KEY } from '$lib/persistence/presets';
+  import { loadTrace, saveTrace } from '$lib/persistence/tracing';
   import { downloadBlob, filename } from '$lib/export/export';
   import Toolbar from '$lib/components/editor/Toolbar.svelte';
   import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
@@ -36,11 +38,53 @@
           : 'Autosave is unavailable.'
       );
     }
-    ready = true;
+    try {
+      editor.restorePresets(localStorage.getItem(PRESETS_KEY) ?? '[]');
+    } catch (e) {
+      editor.notify(
+        e instanceof Error
+          ? `Preset library could not be recovered: ${e.message}`
+          : 'Preset storage is unavailable.'
+      );
+    }
+    const synchronizePresets = (event: StorageEvent) => {
+      if (event.key === PRESETS_KEY) {
+        try {
+          editor.restorePresets(event.newValue ?? '[]');
+        } catch {
+          editor.notify('The preset library in another tab is invalid.');
+        }
+      }
+    };
+    window.addEventListener('storage', synchronizePresets);
+    let disposed = false;
+    void loadTrace()
+      .then((trace) => {
+        if (!disposed) editor.restoreTrace(trace);
+      })
+      .catch(() => {
+        /* Guides are optional; uploading an image can retry storage. */
+      })
+      .finally(() => {
+        if (!disposed) ready = true;
+      });
     return () => {
+      disposed = true;
+      window.removeEventListener('storage', synchronizePresets);
       media.removeEventListener('change', updateLayout);
       editor.destroy();
     };
+  });
+  $effect(() => {
+    if (!ready) return;
+    const trace = editor.trace;
+    const timer = setTimeout(() => {
+      void saveTrace(trace).catch((e) => {
+        if (trace)
+          editor.notify(e instanceof Error ? e.message : 'Tracing storage is unavailable.');
+      });
+    }, 300);
+    return () => clearTimeout(timer);
   });
   $effect(() => {
     if (!ready) return;

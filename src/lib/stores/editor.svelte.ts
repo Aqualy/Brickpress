@@ -8,6 +8,14 @@ import {
   serializeDocument
 } from '../persistence/document';
 import { newId, newSeed } from '../printing/noise';
+import {
+  capturePreset,
+  parsePresets,
+  presetRows,
+  PRESETS_KEY,
+  type CompositionPreset
+} from '../persistence/presets';
+import { readTraceFile, type TraceImage, type TraceOverlay } from '../persistence/tracing';
 import type { InkPass, PlacedPiece, PressDocument } from '../types/document';
 
 type ClipboardPiece = { piece: PlacedPiece; color: string; name: string };
@@ -16,6 +24,13 @@ export class Editor {
   selected = $state.raw<string[]>([]);
   activePassId = $state(this.doc.passes[0].id);
   activePieceId = $state('25269');
+  paletteTab = $state<'pieces' | 'presets'>('pieces');
+  presets = $state.raw<CompositionPreset[]>([]);
+  activePresetId = $state<string | null>(null);
+  presetRotation = $state(0);
+  trace = $state.raw<TraceOverlay | null>(null);
+  traceLoading = $state(false);
+  private traceRequest = 0;
   placementRotation = $state(0);
   tool = $state<'select' | 'place' | 'hand'>('select');
   mode = $state<'design' | 'print'>('design');
@@ -44,6 +59,212 @@ export class Editor {
   private toastTimer?: ReturnType<typeof setTimeout>;
   get activePass() {
     return this.doc.passes.find((p) => p.id === this.activePassId) ?? this.doc.passes[0];
+  }
+  get activePreset() {
+    return this.presets.find((p) => p.id === this.activePresetId);
+  }
+  restorePresets(text: string) {
+    this.presets = parsePresets(text);
+    if (!this.activePreset) this.activePresetId = null;
+  }
+  private writePresets(next: CompositionPreset[]) {
+    try {
+      if (next.length > 100) throw new Error('The library can hold up to 100 presets.');
+      localStorage.setItem(PRESETS_KEY, JSON.stringify(next));
+      this.presets = next;
+      return true;
+    } catch (e) {
+      this.notify(
+        e instanceof Error && next.length > 100
+          ? e.message
+          : 'Preset storage is full or unavailable. Export your presets to keep a backup.'
+      );
+      return false;
+    }
+  }
+  savePreset(name: string, selectionOnly = false) {
+    try {
+      const preset = capturePreset(
+        this.doc,
+        name,
+        selectionOnly ? new Set(this.selected) : undefined
+      );
+      if (this.writePresets([...this.presets, preset])) {
+        this.paletteTab = 'presets';
+        this.notify(`Saved “${preset.name}” to your presets.`);
+        return true;
+      }
+    } catch (e) {
+      this.notify(e instanceof Error ? e.message : 'The preset could not be saved.');
+    }
+    return false;
+  }
+  renamePreset(id: string, name: string) {
+    name = name.trim();
+    if (!name || name.length > 80) {
+      this.notify('Use a preset name of 1–80 characters.');
+      return;
+    }
+    this.writePresets(this.presets.map((p) => (p.id === id ? { ...p, name } : p)));
+  }
+  deletePreset(id: string) {
+    if (this.writePresets(this.presets.filter((p) => p.id !== id)) && this.activePresetId === id) {
+      this.activePresetId = null;
+      this.tool = 'select';
+    }
+  }
+  importPresets(text: string) {
+    const imported = parsePresets(text);
+    const next = [...this.presets];
+    for (const p of imported) {
+      if (next.some((saved) => JSON.stringify(saved) === JSON.stringify(p))) continue;
+      next.push({ ...p, id: next.some((saved) => saved.id === p.id) ? newId() : p.id });
+    }
+    if (this.writePresets(next)) this.notify(`Imported ${imported.length} composition presets.`);
+  }
+  choosePreset(id: string, focus = true) {
+    if (!this.presets.some((p) => p.id === id)) return;
+    this.activePresetId = id;
+    this.presetRotation = 0;
+    this.tool = 'place';
+    this.mode = 'design';
+    this.selected = [];
+    if (focus) this.focusCanvas();
+  }
+  presetPreview(x: number, y: number) {
+    return this.activePreset ? presetRows(this.activePreset, x, y, this.presetRotation) : [];
+  }
+  presetFits(x: number, y: number) {
+    const rows = this.presetPreview(x, y);
+    return (
+      rows.length > 0 &&
+      (!this.doc.options.physical ||
+        rows.every(({ piece }) => isPhysical(getPiece(piece.pieceId)!))) &&
+      canPlace(
+        this.doc,
+        rows.map((p) => p.piece)
+      )
+    );
+  }
+  placePreset(x: number, y: number) {
+    const preset = this.activePreset;
+    if (!preset) return;
+    const rows = this.presetPreview(x, y);
+    if (
+      this.doc.options.physical &&
+      rows.some(({ piece }) => !isPhysical(getPiece(piece.pieceId)!))
+    ) {
+      this.notify(
+        'This preset contains non-standard-height pieces. Disable physical mode to place it.'
+      );
+      return;
+    }
+    if (!this.presetFits(x, y)) {
+      this.notify(
+        'This preset overlaps pieces or does not fit the canvas. Try another position or a larger canvas.'
+      );
+      return;
+    }
+    if (
+      this.doc.passes.length + preset.passes.length > 100 ||
+      this.allPieces.length + rows.length > 10_000
+    ) {
+      this.notify('Placement would exceed the project limit of 100 ink passes or 10,000 pieces.');
+      return;
+    }
+    const passes = preset.passes.map((p) => makePass(p.color, `${preset.name} · ${p.name}`));
+    for (const row of rows)
+      passes[row.passIndex].pieces.push({ ...row.piece, uid: newId(), seed: newSeed() });
+    this.commit((doc) => doc.passes.push(...passes));
+    this.selected = passes.flatMap((p) => p.pieces.map((piece) => piece.uid));
+    this.activePassId = passes[0].id;
+    this.activePresetId = null;
+    this.tool = 'select';
+    this.notify(`Placed “${preset.name}”.`);
+  }
+  restoreTrace(record: TraceImage | null) {
+    if (!record) return;
+    this.trace = { ...record, url: URL.createObjectURL(record.asset) };
+  }
+  async uploadTrace(file: File) {
+    const request = ++this.traceRequest;
+    this.traceLoading = true;
+    try {
+      const image = await readTraceFile(file);
+      if (request !== this.traceRequest) return;
+      if (this.trace) URL.revokeObjectURL(this.trace.url);
+      this.trace = {
+        ...image,
+        url: URL.createObjectURL(image.asset),
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        opacity: 0.4,
+        visible: true,
+        locked: true
+      };
+      this.fitTrace();
+      this.mode = 'design';
+      this.notify('Tracing image added beneath your pieces.');
+    } catch (e) {
+      if (request === this.traceRequest)
+        this.notify(e instanceof Error ? e.message : 'The image could not be loaded.');
+    } finally {
+      if (request === this.traceRequest) this.traceLoading = false;
+    }
+  }
+  updateTrace(
+    update: Partial<Pick<TraceImage, 'x' | 'y' | 'width' | 'opacity' | 'visible' | 'locked'>>
+  ) {
+    if (!this.trace) return;
+    const trace = { ...this.trace, ...update };
+    if (update.width !== undefined)
+      trace.height = (trace.width * trace.imageHeight) / trace.imageWidth;
+    if (
+      ![trace.x, trace.y, trace.width, trace.height, trace.opacity].every(Number.isFinite) ||
+      trace.width <= 0 ||
+      trace.width > 1024 ||
+      trace.height > 1024 ||
+      Math.abs(trace.x) > 1024 ||
+      Math.abs(trace.y) > 1024 ||
+      trace.opacity < 0 ||
+      trace.opacity > 1
+    ) {
+      this.notify('Use valid tracing coordinates and a positive width up to 1,024 studs.');
+      return;
+    }
+    this.trace = trace;
+  }
+  fitTrace() {
+    if (!this.trace) return;
+    const scale = Math.min(
+      this.doc.board.width / this.trace.imageWidth,
+      this.doc.board.height / this.trace.imageHeight
+    );
+    const width = this.trace.imageWidth * scale,
+      height = this.trace.imageHeight * scale;
+    this.trace = {
+      ...this.trace,
+      width,
+      height,
+      x: (this.doc.board.width - width) / 2,
+      y: (this.doc.board.height - height) / 2
+    };
+  }
+  centerTrace() {
+    if (this.trace)
+      this.trace = {
+        ...this.trace,
+        x: (this.doc.board.width - this.trace.width) / 2,
+        y: (this.doc.board.height - this.trace.height) / 2
+      };
+  }
+  removeTrace() {
+    this.traceRequest++;
+    this.traceLoading = false;
+    if (this.trace) URL.revokeObjectURL(this.trace.url);
+    this.trace = null;
   }
   get allPieces() {
     return this.doc.passes.flatMap((pass) => pass.pieces.map((piece) => ({ piece, pass })));
@@ -97,6 +318,7 @@ export class Editor {
     const p = getPiece(id);
     if (!p || (this.doc.options.physical && !isPhysical(p))) return;
     this.activePieceId = id;
+    this.activePresetId = null;
     this.placementRotation = p.allowedRotations[0];
     this.tool = 'place';
     this.mode = 'design';
@@ -120,6 +342,10 @@ export class Editor {
     );
   }
   place(x: number, y: number, pieceId = this.activePieceId) {
+    if (this.activePresetId) {
+      this.placePreset(x, y);
+      return;
+    }
     const catalogPiece = getPiece(pieceId);
     if (!catalogPiece || (this.doc.options.physical && !isPhysical(catalogPiece))) return;
     if (this.activePass.locked || !this.activePass.visible) {
@@ -155,6 +381,10 @@ export class Editor {
   }
   rotate() {
     if (this.tool === 'place' && !this.selected.length) {
+      if (this.activePreset) {
+        this.presetRotation = (this.presetRotation + 90) % 360;
+        return;
+      }
       const rotations = getPiece(this.activePieceId)!.allowedRotations;
       this.placementRotation =
         rotations[(rotations.indexOf(this.placementRotation) + 1) % rotations.length];
@@ -385,6 +615,8 @@ export class Editor {
       )
     )
       return;
+    this.removeTrace();
+    this.activePresetId = null;
     this.doc = createDocument();
     this.history.clear();
     this.historyVersion++;
@@ -396,6 +628,8 @@ export class Editor {
   }
   load(text: string, recovered = false) {
     const doc = parseDocument(text);
+    this.removeTrace();
+    this.activePresetId = null;
     this.doc = doc;
     this.history.clear();
     this.historyVersion++;
@@ -444,5 +678,6 @@ export class Editor {
   }
   destroy() {
     clearTimeout(this.toastTimer);
+    this.removeTrace();
   }
 }

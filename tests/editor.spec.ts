@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createDocument, AUTOSAVE_KEY, makePass } from '../src/lib/persistence/document';
 import { pieces } from '../src/lib/catalog/catalog';
 import type { PressDocument } from '../src/lib/types/document';
+import { capturePreset, PRESETS_KEY } from '../src/lib/persistence/presets';
 
 async function start(page: Page, doc = createDocument()) {
   await page.addInitScript(({ key, doc }) => localStorage.setItem(key, JSON.stringify(doc)), {
@@ -843,4 +844,282 @@ test('design seams have a constant width across sizes, curves and diagonals', as
   for (const gaps of measurements)
     for (const gap of gaps) expect(Math.abs(gap - 0.025)).toBeLessThan(0.006);
   expect(await documentState(page)).toEqual(doc);
+});
+
+test('composition presets save colors and geometry, drag into other canvases, and reject invalid placements', async ({
+  page
+}) => {
+  page.on('dialog', (dialog) => dialog.accept());
+  const doc = createDocument();
+  doc.passes[0].pieces = [{ uid: 'red', pieceId: '3070', x: 4, y: 4, rotation: 0, seed: 171 }];
+  doc.passes[1].pieces = [
+    { uid: 'green', pieceId: '3069', x: 5, y: 4, rotation: 90, mirrorX: true, seed: 172 }
+  ];
+  await start(page, doc);
+  await page.getByRole('tab', { name: 'Presets', exact: true }).click();
+  await page.getByRole('button', { name: 'Save composition preset', exact: true }).click();
+  await page.getByLabel('Preset name', { exact: true }).fill('Sprout');
+  await page.getByRole('button', { name: 'Save preset', exact: true }).click();
+  const card = page.getByRole('button', { name: 'Place preset Sprout, 2 by 2 studs', exact: true });
+  await expect(card).toBeVisible();
+  await page.screenshot({ path: 'artifacts/composition-presets.png' });
+  await expect(
+    page.getByRole('button', { name: 'Save composition preset', exact: true })
+  ).toBeFocused();
+  const library = await page.evaluate((key) => localStorage.getItem(key)!, PRESETS_KEY);
+  expect(JSON.parse(library)[0].passes.map((pass: { color: string }) => pass.color)).toEqual([
+    doc.passes[0].color,
+    doc.passes[1].color
+  ]);
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations
+  ).toEqual([]);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await count(page, 0);
+  await page.getByRole('button', { name: 'Canvas size', exact: true }).click();
+  await page.getByLabel('Artboard preset').selectOption('8');
+  await page.keyboard.press('Escape');
+  const box = (await page.locator('.artboard').boundingBox())!;
+  await card.dragTo(page.locator('.artboard'), {
+    targetPosition: { x: (box.width * 2.5) / 8, y: (box.height * 2.5) / 8 }
+  });
+  await count(page, 2);
+  let state = await documentState(page);
+  expect(state.board).toEqual({ width: 8, height: 8 });
+  expect(state.passes[3].pieces[0]).toMatchObject({ pieceId: '3070', x: 2, y: 2 });
+  expect(state.passes[4].pieces[0]).toMatchObject({
+    pieceId: '3069',
+    x: 3,
+    y: 2,
+    rotation: 90,
+    mirrorX: true
+  });
+  expect(state.passes.slice(3).map((p) => p.color)).toEqual([
+    doc.passes[0].color,
+    doc.passes[1].color
+  ]);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await count(page, 0);
+  expect((await documentState(page)).passes).toHaveLength(3);
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await count(page, 2);
+  await card.click();
+  await clickStud(page, 2, 2);
+  await expect(page.locator('.toast')).toContainText('preset overlaps');
+  await count(page, 2);
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page.getByRole('button', { name: 'Canvas size', exact: true }).click();
+  await page.getByLabel('Custom board width').fill('1');
+  await page.getByLabel('Custom board height').fill('1');
+  await page.getByRole('button', { name: 'Apply size', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await card.click();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.toast')).toContainText('does not fit');
+  await count(page, 0);
+  state = await documentState(page);
+  expect(state.board).toEqual({ width: 1, height: 1 });
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export preset library', exact: true }).click();
+  expect(JSON.parse(await readFile((await (await download).path())!, 'utf8'))).toEqual(
+    JSON.parse(library)
+  );
+  await page.getByRole('button', { name: 'Preset actions for Sprout', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete preset', exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await page.getByLabel('Import composition presets file').setInputFiles({
+    name: 'sprout.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(library)
+  });
+  await expect(card).toBeVisible();
+  await page.getByRole('button', { name: 'Preset actions for Sprout', exact: true }).click();
+  await page.getByLabel('Rename preset Sprout').fill('Seedling');
+  await page.getByLabel('Rename preset Sprout').press('Tab');
+  await page.keyboard.press('Escape');
+  const recovered = await page.context().newPage();
+  await recovered.goto('/');
+  await recovered.getByRole('tab', { name: 'Presets', exact: true }).click();
+  await expect(
+    recovered.getByRole('button', { name: 'Place preset Seedling, 2 by 2 studs', exact: true })
+  ).toBeVisible();
+  await recovered.close();
+});
+
+test('preset placement works with the keyboard in drawers and respects physical mode', async ({
+  page
+}) => {
+  const source = createDocument();
+  source.passes[0].pieces = [
+    { uid: 'special', pieceId: '68869', x: 3, y: 3, rotation: 0, seed: 171 }
+  ];
+  const preset = capturePreset(source, 'Special');
+  await page.addInitScript(
+    ({ key, preset }) => localStorage.setItem(key, JSON.stringify([preset])),
+    { key: PRESETS_KEY, preset }
+  );
+  const doc = createDocument();
+  doc.options.physical = true;
+  await start(page, doc);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.getByRole('button', { name: 'Open Pieces', exact: true }).click();
+  await page.getByRole('tab', { name: 'Pieces', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Presets', exact: true })).toBeFocused();
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations
+  ).toEqual([]);
+  await page
+    .getByRole('button', {
+      name: `Place preset Special, ${preset.width} by ${preset.height} studs`,
+      exact: true
+    })
+    .click();
+  await expect(page.locator('.canvas-workspace')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.toast')).toContainText('non-standard-height');
+  await count(page, 0);
+  await grid(page);
+  await page.getByLabel('Physical print mode').uncheck();
+  await page.keyboard.press('Escape');
+  await page.locator('.canvas-workspace').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('r');
+  await page.keyboard.press('Enter');
+  await count(page, 1);
+  expect((await documentState(page)).passes.at(-1)!.pieces[0]).toMatchObject({
+    x: 1,
+    y: 1,
+    rotation: 90
+  });
+});
+
+test('tracing images persist locally, remain adjustable, and stay outside projects and artwork exports', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  await start(page, doc);
+  const before = await documentState(page);
+  const base64 = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 80;
+    const context = canvas.getContext('2d')!;
+    context.fillStyle = '#005ac5';
+    context.fillRect(0, 0, 160, 80);
+    context.fillStyle = '#ffcd00';
+    context.beginPath();
+    context.arc(80, 40, 28, 0, Math.PI * 2);
+    context.fill();
+    return canvas.toDataURL('image/png').split(',')[1];
+  });
+  await grid(page);
+  await page.getByLabel('Upload tracing image file').setInputFiles({
+    name: 'reference.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(base64, 'base64')
+  });
+  const guide = page.locator('[data-editor-guide="tracing"]');
+  await expect(guide).toBeVisible();
+  await expect(guide).toHaveAttribute('width', '8');
+  await expect(guide).toHaveAttribute('height', '4');
+  await expect(guide).toHaveAttribute('y', '2');
+  await expect(page.getByLabel('Tracing X in studs')).toBeDisabled();
+  await page.getByLabel('Lock tracing position').uncheck();
+  await page.getByLabel('Tracing width in studs').fill('4');
+  await page.getByLabel('Tracing width in studs').press('Tab');
+  await page.getByLabel('Tracing X in studs').fill('2');
+  await page.getByLabel('Tracing X in studs').press('Tab');
+  await page.getByLabel('Tracing Y in studs').fill('1');
+  await page.getByLabel('Tracing Y in studs').press('Tab');
+  await page.getByLabel('Tracing image opacity').press('End');
+  await expect(guide).toHaveAttribute('opacity', '1');
+  await expect(guide).toHaveAttribute('width', '4');
+  await expect(guide).toHaveAttribute('height', '2');
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations
+  ).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Grid settings', exact: true })).toBeFocused();
+  expect(await documentState(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Place Tile 1×1, 3070', exact: true }).click();
+  await clickStud(page, 3, 2);
+  await count(page, 1);
+  expect(
+    await page.evaluate(() => {
+      const image = document.querySelector('[data-editor-guide="tracing"]')!;
+      return !!(
+        image.compareDocumentPosition(document.querySelector('.artboard [data-uid]')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+      );
+    })
+  ).toBe(true);
+  await page.screenshot({ path: 'artifacts/tracing-overlay.png' });
+  await page.keyboard.press('Control+z');
+  await count(page, 0);
+  const vector = (await exportFile(page, 'SVG', false, '1', 'design')).toString('utf8');
+  expect(vector).not.toContain('<image');
+  expect(vector).not.toContain('blob:');
+  const save = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  expect(JSON.parse(await readFile((await (await save).path())!, 'utf8'))).toEqual(before);
+  await page.getByRole('button', { name: 'Print preview', exact: true }).click();
+  await expect(guide).toHaveCount(0);
+  await page.getByRole('button', { name: 'Design', exact: true }).click();
+  await expect(guide).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const db = await new Promise<IDBDatabase>((resolve) => {
+          const r = indexedDB.open('brickpress-guides', 1);
+          r.onsuccess = () => resolve(r.result);
+        });
+        const value = await new Promise<{ x: number; width: number }>((resolve) => {
+          const r = db.transaction('tracing').objectStore('tracing').get('current');
+          r.onsuccess = () => resolve(r.result);
+        });
+        db.close();
+        return value?.width;
+      })
+    )
+    .toBe(4);
+  await page.reload();
+  await expect(guide).toBeVisible();
+  await expect(guide).toHaveAttribute('x', '2');
+  await expect(guide).toHaveAttribute('y', '1');
+  await expect(guide).toHaveAttribute('width', '4');
+  await page.setViewportSize({ width: 320, height: 740 });
+  await grid(page);
+  await page.getByLabel('Show tracing image').uncheck();
+  await expect(guide).toHaveCount(0);
+  await page.getByLabel('Show tracing image').check();
+  await expect(guide).toBeVisible();
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations
+  ).toEqual([]);
+  await page
+    .getByLabel('Upload tracing image file')
+    .setInputFiles({ name: 'bad.png', mimeType: 'image/png', buffer: Buffer.from('not an image') });
+  await expect(page.locator('.toast')).toContainText('could not be decoded');
+  await expect(guide).toBeVisible();
+  await page.getByRole('button', { name: 'Remove tracing image', exact: true }).click();
+  await expect(guide).toHaveCount(0);
 });

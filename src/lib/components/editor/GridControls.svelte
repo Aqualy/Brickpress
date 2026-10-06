@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Editor } from '../../stores/editor.svelte';
   import { canPlace } from '../../geometry/geometry';
+  import TracingControls from './TracingControls.svelte';
   let { editor }: { editor: Editor } = $props();
   function overlap(value: boolean) {
     const doc = { ...editor.doc, options: { ...editor.doc.options, allowOverlap: value } };
@@ -79,3 +80,5 @@
     }}
   /></label
 >
+
+<TracingControls {editor} />

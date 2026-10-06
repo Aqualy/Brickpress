@@ -27,7 +27,7 @@
     initialPan = { x: 0, y: 0 };
   let additive = false;
   const studPixels = 32;
-  const designMasks = pieces.map(designMaskMarkup).join('');
+  const designMasks = pieces.map((piece) => designMaskMarkup(piece)).join('');
   let board = $derived(editor.doc.board);
   let fit = $derived(
     Math.min(
@@ -43,14 +43,23 @@
   let printed = $derived(editor.mode === 'print');
   let selectedIds = $derived(new Set(editor.selected));
   let selected = $derived(editor.selectedPieces);
-  let ghostPieces = $derived(
-    hover && editor.tool === 'place' && !printed ? editor.ghosts(hover.x, hover.y) : []
+  let ghostRows = $derived(
+    hover && editor.tool === 'place' && !printed
+      ? editor.activePresetId
+        ? editor.presetPreview(hover.x, hover.y)
+        : editor
+            .ghosts(hover.x, hover.y)
+            .map((piece) => ({ piece, color: editor.activePass.color }))
+      : []
   );
+  let ghostPieces = $derived(ghostRows.map((row) => row.piece));
   let ghostsValid = $derived(
     ghostPieces.length > 0 &&
-      !editor.activePass.locked &&
-      editor.activePass.visible &&
-      canPlace(editor.doc, ghostPieces)
+      (editor.activePresetId
+        ? !!hover && editor.presetFits(hover.x, hover.y)
+        : !editor.activePass.locked &&
+          editor.activePass.visible &&
+          canPlace(editor.doc, ghostPieces))
   );
   let dragValid = $derived(
     !dragKind ||
@@ -226,9 +235,15 @@
   function drop(event: DragEvent) {
     event.preventDefault();
     const id = event.dataTransfer?.getData('application/x-legopress-piece'),
+      presetId = event.dataTransfer?.getData('application/x-brickpress-preset'),
       p = point(event);
-    if (id && inside(p)) {
+    if (presetId && inside(p)) {
+      editor.choosePreset(presetId, false);
+      editor.placePreset(Math.floor(p.x), Math.floor(p.y));
+      editor.focusCanvas();
+    } else if (id && inside(p)) {
       editor.mode = 'design';
+      editor.choosePiece(id);
       editor.place(Math.floor(p.x), Math.floor(p.y), id);
     }
     hover = null;
@@ -338,6 +353,20 @@
       aria-label={`${editor.doc.name}, ${board.width} by ${board.height} studs`}
     >
       {@html paper}
+      {#if !printed && editor.trace?.visible}
+        <image
+          data-editor-guide="tracing"
+          href={editor.trace.url}
+          x={editor.trace.x}
+          y={editor.trace.y}
+          width={editor.trace.width}
+          height={editor.trace.height}
+          opacity={editor.trace.opacity}
+          preserveAspectRatio="none"
+          pointer-events="none"
+          aria-hidden="true"
+        />
+      {/if}
       {#if !printed}<defs>{@html designMasks}</defs>{/if}
       {#if !printed && editor.doc.options.grid !== 'off' && editor.gridAppearance === 'embossed'}
         <defs>
@@ -456,10 +485,12 @@
             vector-effect="non-scaling-stroke"
             pointer-events="none"
           />{/if}
-        {#each ghostPieces as ghost, i (i)}{@const p = getPiece(ghost.pieceId)!}<path
+        {#each ghostRows as row, i (i)}{@const ghost = row.piece}{@const p = getPiece(
+            ghost.pieceId
+          )!}<path
             d={p.geometry.path}
             transform={pieceTransform(p, ghost, 1)}
-            fill={ghostsValid ? editor.activePass.color : '#b42318'}
+            fill={ghostsValid ? row.color : '#b42318'}
             fill-rule={p.geometry.fillRule}
             mask={`url(#${designMaskId(p)})`}
             opacity=".32"

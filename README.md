@@ -24,6 +24,8 @@ The production build is a static site in `build/`. Serve it with an ordinary sta
 ## Working in the studio
 
 - Pick an essential piece, or use **Piece filters** to browse **All pieces**. Vertical categories show the full category catalog. Thumbnails preview the active ink. Click the board to stamp a piece, or drag it from the palette. Choosing a piece focuses the artboard: arrows move the placement cursor, Enter stamps, and **R** rotates.
+- The palette’s **Presets** tab saves all visible pieces or just the selection as a named composition. Empty margins are trimmed; ink colors, pass order, rotations and reflections are preserved. Drag a preset onto any project, or choose it and use arrows, **R**, and Enter. Pieces keep their stud dimensions. The board is never resized; placements that do not fit, collide, or violate physical mode are rejected without partial insertion. A successful placement is one undoable transaction. Rename, delete, import, and export presets from the library controls.
+- **Grid → Tracing image** loads a PNG, JPEG, WebP, GIF, AVIF or BMP beneath the pieces. Adjust opacity and visibility; unlock position to edit X, Y and width in studs, or fit and center the guide. Image proportions stay fixed. Tracing images are saved locally in IndexedDB and recovered on reload; New/Open clears the current guide. They are hidden in Print Preview and excluded from project, SVG and PNG exports. Supported images are limited to 20 MB and 40 megapixels.
 - **V** selects, **B** places and **H** pans. Shift-click adds to selection; dragging empty board space creates a box selection. Arrows move selected pieces one stud; Shift-arrows move four studs.
 - **R** rotates a selection. Delete/Backspace deletes; Ctrl/Command-D duplicates; Ctrl/Command-C/V copies and pastes; Ctrl/Command-A selects all unlocked visible pieces.
 - Ctrl/Command-Z undoes; Ctrl/Command-Shift-Z redoes. Dragging commits exactly one history entry. History keeps the last 100 document transactions.
@@ -40,6 +42,8 @@ The production build is a static site in `build/`. Serve it with an ordinary sta
 **Save** downloads an editable `.legopress.json` file containing all geometry references, positions, rotations, mirror flags, piece seeds, pass seeds, swatches, paper and print settings. **Open** validates a project before replacing the current document. New documents prompt when file-unsaved changes exist.
 
 Changes also autosave to this browser's localStorage. Reloading recovers the most recent document. Keep a project file for durable storage: clearing browser data removes device autosaves. Copy/paste uses an editor-local clipboard.
+
+Composition presets are stored separately from projects in this browser and remain available across New/Open. Export the `.brickpress-presets.json` library for backup or import it on another device. Clearing browser data removes both the preset library and tracing guide.
 
 ## Rendering and exports
 

@@ -8,7 +8,8 @@
     children,
     className = '',
     placement = 'below',
-    width = 300
+    width = 300,
+    open = $bindable(false)
   }: {
     label: string;
     trigger: Snippet;
@@ -16,8 +17,8 @@
     className?: string;
     placement?: 'below' | 'above';
     width?: number;
+    open?: boolean;
   } = $props();
-  let open = $state(false);
   let triggerElement = $state<HTMLButtonElement | null>(null);
 </script>
 
