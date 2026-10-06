@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { asset } from '$app/paths';
   import type { Editor } from '../../stores/editor.svelte';
   import Icon from '../ui/Icon.svelte';
   import { Input } from '../ui/input';
@@ -31,7 +32,7 @@
   <div class="toolbar-group menu-group">
     <Popover label="Main menu" className="menu-trigger">
       {#snippet trigger()}<Icon name="menu" size={22} />{/snippet}
-      <h3>Form & Impression</h3>
+      <h3>Brickpress</h3>
       <label class="field-label"
         >Document name<Input
           aria-label="Document name"
@@ -81,8 +82,17 @@
         >
       </div>
       <p class="fine-print">
-        Keyboard tools work when the artboard has focus. V Select · B Place · H Hand · R Rotate · G
-        Grid. Ctrl/⌘ S saves.
+        Artboard: V Select · B Place · H Hand · R Rotate · G Grid. Ctrl/⌘ S saves. Place mode:
+        middle-click or arrows + I picks a piece.
+      </p>
+      <p class="fine-print">
+        Independent software. LEGO® is a trademark of the LEGO Group, which does not sponsor,
+        authorize or endorse Brickpress. <a
+          class="underline underline-offset-2"
+          href={asset('/THIRD_PARTY_NOTICES.txt')}
+          target="_blank"
+          rel="noreferrer">Third-party notices</a
+        >.
       </p>
     </Popover>
     <Button
@@ -128,7 +138,7 @@
       class={['toolbar-button', editor.tool === 'place' && 'active']}
       aria-label="Place tool"
       aria-pressed={editor.tool === 'place'}
-      title="Place · B"
+      title="Place · B · Middle-click a piece to pick its shape and orientation"
       onclick={() => tool('place')}><Icon name="cube" size={22} /><span>Place</span></Button
     >
     <Button

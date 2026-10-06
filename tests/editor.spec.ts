@@ -53,6 +53,107 @@ async function clickStud(page: Page, x: number, y: number) {
 async function count(page: Page, number: number) {
   await expect(page.locator('.artboard [data-uid]')).toHaveCount(number);
 }
+
+test('Brickpress picks piece orientation with middle-click in Place mode and preserves panning', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 12, height: 12 };
+  doc.passes[1].locked = true;
+  doc.passes[1].pieces = [
+    {
+      uid: 'sample',
+      pieceId: '24246',
+      x: 3,
+      y: 3,
+      rotation: 90,
+      mirrorX: true,
+      mirrorY: true,
+      seed: 182
+    }
+  ];
+  const preset = capturePreset(doc, 'Sample');
+  await page.addInitScript(
+    ({ key, preset }) => localStorage.setItem(key, JSON.stringify([preset])),
+    {
+      key: PRESETS_KEY,
+      preset
+    }
+  );
+  await start(page, doc);
+  await expect(page).toHaveTitle('Brickpress — Digital Letterpress');
+  await page.getByRole('button', { name: 'Main menu', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Brickpress', exact: true })).toBeVisible();
+  await expect(page.getByText('Independent software.', { exact: false })).toContainText(
+    'does not sponsor'
+  );
+  await page.screenshot({ path: 'artifacts/brickpress-menu-desktop.png' });
+  await page.keyboard.press('Escape');
+  // A picked piece must also replace a queued composition preset.
+  await page.getByRole('tab', { name: 'Presets', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Place preset Sample, 1 by 1 studs', exact: true })
+    .click();
+  const original = await documentState(page);
+  const transform = page.locator('.artboard-transform');
+  const originalView = await transform.getAttribute('style');
+  await page.locator('.artboard [data-uid="sample"] path').click({ button: 'middle' });
+  await count(page, 1);
+  expect(await documentState(page)).toEqual(original);
+  expect(await transform.getAttribute('style')).toEqual(originalView);
+  await page.getByRole('tab', { name: 'Pieces', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Place Tile 1×1 with Rounded End, 24246', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true');
+  await clickStud(page, 7, 7);
+  await count(page, 2);
+  let state = await documentState(page);
+  expect(state.passes[0].pieces[0]).toMatchObject({
+    pieceId: '24246',
+    x: 7,
+    y: 7,
+    rotation: 90,
+    mirrorX: true,
+    mirrorY: true
+  });
+  expect(state.passes[1]).toEqual(original.passes[1]);
+  await page.keyboard.press('Control+z');
+  await count(page, 1);
+  expect(await documentState(page)).toEqual(original);
+  // Choosing a catalog piece starts from its normal orientation again.
+  await page
+    .getByRole('button', { name: 'Place Tile 1×1 with Rounded End, 24246', exact: true })
+    .click();
+  await clickStud(page, 7, 7);
+  state = await documentState(page);
+  expect(state.passes[0].pieces[0].rotation).toBe(0);
+  expect(state.passes[0].pieces[0].mirrorX).toBeFalsy();
+  expect(state.passes[0].pieces[0].mirrorY).toBeFalsy();
+  const beforePan = await documentState(page);
+  const blank = await studPoint(page, 1.5, 1.5);
+  await page.mouse.move(blank.x, blank.y);
+  await page.mouse.down({ button: 'middle' });
+  await page.mouse.move(blank.x + 24, blank.y + 16, { steps: 5 });
+  await page.mouse.up({ button: 'middle' });
+  expect(await transform.getAttribute('style')).not.toEqual(originalView);
+  expect(await documentState(page)).toEqual(beforePan);
+  // Print Preview retains middle-button panning instead of sampling.
+  await page.getByRole('button', { name: 'Print preview', exact: true }).click();
+  const beforePrintPan = await transform.getAttribute('style');
+  const piece = (await page.locator('.artboard [data-uid="sample"] path').boundingBox())!;
+  await page.mouse.move(piece.x + piece.width / 2, piece.y + piece.height / 2);
+  await page.mouse.down({ button: 'middle' });
+  await page.mouse.move(piece.x + piece.width / 2 + 20, piece.y + piece.height / 2 + 10, {
+    steps: 5
+  });
+  await page.mouse.up({ button: 'middle' });
+  expect(await transform.getAttribute('style')).not.toEqual(beforePrintPan);
+  await expect(page.getByRole('button', { name: 'Print preview', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  expect(await documentState(page)).toEqual(beforePan);
+});
 async function exportFile(
   page: Page,
   format: 'PNG' | 'SVG',
@@ -74,6 +175,76 @@ async function exportFile(
   await page.getByRole('button', { name: `Export ${format}`, exact: true }).click();
   return readFile((await (await download).path())!);
 }
+
+test('keyboard piece sampling stays scoped to the canvas and Brickpress notices work in narrow menus', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  doc.passes[0].pieces = [
+    { uid: 'sample', pieceId: '24246', x: 2, y: 2, rotation: 270, mirrorX: true, seed: 190 }
+  ];
+  await start(page, doc);
+  await page.getByRole('button', { name: 'Place Tile 1×1, 3070', exact: true }).click();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('i');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Enter');
+  await count(page, 2);
+  expect((await documentState(page)).passes[0].pieces[1]).toMatchObject({
+    pieceId: '24246',
+    x: 4,
+    y: 2,
+    rotation: 270,
+    mirrorX: true
+  });
+  await page.getByLabel('Search pieces').focus();
+  await page.keyboard.press('i');
+  await expect(page.getByLabel('Search pieces')).toHaveValue('i');
+  await count(page, 2);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.getByRole('button', { name: 'Main menu', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Brickpress', exact: true })).toBeVisible();
+  await page
+    .getByRole('link', { name: 'Third-party notices', exact: true })
+    .scrollIntoViewIfNeeded();
+  const noticeLink = page.getByRole('link', { name: 'Third-party notices', exact: true });
+  await noticeLink.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(noticeLink).toBeFocused();
+  expect(
+    await noticeLink.evaluate((link) => {
+      // Inline links can wrap: the combined bounding box includes empty space
+      // between lines. Check each actual text fragment for obstruction.
+      return Array.from(link.getClientRects()).every(
+        (box) =>
+          document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)?.closest('a') ===
+          link
+      );
+    })
+  ).toBe(true);
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations
+  ).toEqual([]);
+  await page.screenshot({ path: 'artifacts/brickpress-menu-mobile.png' });
+  const response = await page.request.get('/THIRD_PARTY_NOTICES.txt');
+  expect(response.ok()).toBe(true);
+  const notices = await response.text();
+  expect(notices).toContain('SIL OPEN FONT LICENSE');
+  expect(notices).toContain('shadcn-svelte UI foundation');
+  expect(notices).toContain('ISC License');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Main menu', exact: true })).toBeFocused();
+});
 
 test('all 41 catalog pieces can be found and placed with their supplied silhouette', async ({
   page
@@ -268,7 +439,9 @@ test('projects save, load and recover complete document data; vector and 4× tra
   const original = await documentState(page);
   const projectDownload = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  const project = await readFile((await (await projectDownload).path())!, 'utf8');
+  const downloadedProject = await projectDownload;
+  expect(downloadedProject.suggestedFilename()).toMatch(/\.brickpress\.json$/);
+  const project = await readFile((await downloadedProject.path())!, 'utf8');
   expect(JSON.parse(project)).toEqual(original);
   await page.getByRole('button', { name: 'New', exact: true }).click();
   await count(page, 0);

@@ -68,6 +68,7 @@ button:hover:not(:disabled) {
   background-color: #edf1f7;
 }
 button:focus-visible,
+a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 summary:focus-visible,
@@ -403,6 +404,10 @@ kbd {
 }
 .control-popover::backdrop {
   background: transparent;
+}
+.control-popover[aria-label='Main menu'] {
+  /* Keep keyboard-focused menu links visible above transient canvas notices. */
+  z-index: 110;
 }
 .menu-actions {
   display: flex;

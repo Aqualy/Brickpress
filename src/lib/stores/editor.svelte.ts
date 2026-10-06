@@ -32,6 +32,8 @@ export class Editor {
   traceLoading = $state(false);
   private traceRequest = 0;
   placementRotation = $state(0);
+  placementMirrorX = $state(false);
+  placementMirrorY = $state(false);
   tool = $state<'select' | 'place' | 'hand'>('select');
   mode = $state<'design' | 'print'>('design');
   inspectorTab = $state<'properties' | 'layers' | 'export'>('properties');
@@ -320,9 +322,24 @@ export class Editor {
     this.activePieceId = id;
     this.activePresetId = null;
     this.placementRotation = p.allowedRotations[0];
+    this.placementMirrorX = false;
+    this.placementMirrorY = false;
     this.tool = 'place';
     this.mode = 'design';
     this.selected = [];
+  }
+  pickPiece(uid: string) {
+    const row = this.allPieces.find(({ piece }) => piece.uid === uid);
+    if (!row || !row.pass.visible) return;
+    const catalogPiece = getPiece(row.piece.pieceId);
+    if (!catalogPiece || (this.doc.options.physical && !isPhysical(catalogPiece))) return;
+    // Sampling changes the placement tool only, including reflected silhouettes.
+    // Keep the current ink, document, and undo history intact, even on locked passes.
+    this.choosePiece(row.piece.pieceId);
+    this.placementRotation = row.piece.rotation;
+    this.placementMirrorX = !!row.piece.mirrorX;
+    this.placementMirrorY = !!row.piece.mirrorY;
+    this.notify(`Picked ${catalogPiece.name}.`);
   }
   ghosts(x: number, y: number, pieceId = this.activePieceId) {
     const p = getPiece(pieceId);
@@ -336,7 +353,9 @@ export class Editor {
         rotation: p.allowedRotations.includes(this.placementRotation)
           ? this.placementRotation
           : p.allowedRotations[0],
-        seed: 1
+        seed: 1,
+        ...(this.placementMirrorX && { mirrorX: true }),
+        ...(this.placementMirrorY && { mirrorY: true })
       },
       this.doc
     );

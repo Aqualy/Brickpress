@@ -112,7 +112,7 @@
   function save() {
     downloadBlob(
       new Blob([editor.projectText()], { type: 'application/json' }),
-      `${filename(editor.doc.name)}.legopress.json`
+      `${filename(editor.doc.name)}.brickpress.json`
     );
     editor.saved();
   }
@@ -236,7 +236,7 @@
 </script>
 
 <svelte:head
-  ><title>Form & Impression — Digital Letterpress</title><meta
+  ><title>Brickpress — Digital Letterpress</title><meta
     name="description"
     content="A focused studio for modular tile compositions and procedural letterpress impressions. Compose, press, and export."
   /></svelte:head
@@ -246,7 +246,7 @@
   class="hidden-input"
   bind:this={fileInput}
   type="file"
-  accept=".json,.legopress.json"
+  accept=".json,.brickpress.json,.legopress.json"
   aria-label="Open project file"
   onchange={load}
 />

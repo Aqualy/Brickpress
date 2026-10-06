@@ -1,17 +1,18 @@
 {
-  "name": "form-and-impression",
+  "name": "brickpress",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "build": "npm run notices && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "prepare": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "validate:catalog": "node scripts/validate-catalog.mjs"
+    "validate:catalog": "node scripts/validate-catalog.mjs",
+    "notices": "node scripts/generate-notices.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

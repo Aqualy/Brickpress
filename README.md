@@ -1,6 +1,6 @@
-# Form & Impression
+# Brickpress
 
-A local, browser-based studio for individual LEGO tile compositions and simulated letterpress impressions. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas is used only to rasterize PNG exports. No accounts or backend.
+A local, browser-based studio for modular tile compositions and simulated letterpress impressions. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas is used only to rasterize PNG exports. No accounts or backend.
 
 ## Run
 
@@ -24,6 +24,7 @@ The production build is a static site in `build/`. Serve it with an ordinary sta
 ## Working in the studio
 
 - Pick an essential piece, or use **Piece filters** to browse **All pieces**. Vertical categories show the full category catalog. Thumbnails preview the active ink. Click the board to stamp a piece, or drag it from the palette. Choosing a piece focuses the artboard: arrows move the placement cursor, Enter stamps, and **R** rotates.
+- In **Place** mode, middle-click an existing piece to pick its shape, rotation and reflections, keeping the active ink. For keyboard sampling, use arrows to move the placement cursor over a piece, then press **I**. Sampling also works on locked passes and changes only the placement tool. Middle-drag empty space, or use **H** / Space-drag, to pan.
 - The palette’s **Presets** tab saves all visible pieces or just the selection as a named composition. Empty margins are trimmed; ink colors, pass order, rotations and reflections are preserved. Drag a preset onto any project, or choose it and use arrows, **R**, and Enter. Pieces keep their stud dimensions. The board is never resized; placements that do not fit, collide, or violate physical mode are rejected without partial insertion. A successful placement is one undoable transaction. Rename, delete, import, and export presets from the library controls.
 - **Grid → Tracing image** loads a PNG, JPEG, WebP, GIF, AVIF or BMP beneath the pieces. Adjust opacity and visibility; unlock position to edit X, Y and width in studs, or fit and center the guide. Image proportions stay fixed. Tracing images are saved locally in IndexedDB and recovered on reload; New/Open clears the current guide. They are hidden in Print Preview and excluded from project, SVG and PNG exports. Supported images are limited to 20 MB and 40 megapixels.
 - **V** selects, **B** places and **H** pans. Shift-click adds to selection; dragging empty board space creates a box selection. Arrows move selected pieces one stud; Shift-arrows move four studs.
@@ -39,7 +40,7 @@ The production build is a static site in `build/`. Serve it with an ordinary sta
 
 ## Files and recovery
 
-**Save** downloads an editable `.legopress.json` file containing all geometry references, positions, rotations, mirror flags, piece seeds, pass seeds, swatches, paper and print settings. **Open** validates a project before replacing the current document. New documents prompt when file-unsaved changes exist.
+**Save** downloads an editable `.brickpress.json` file containing all geometry references, positions, rotations, mirror flags, piece seeds, pass seeds, swatches, paper and print settings. **Open** also accepts legacy `.legopress.json` files and validates a project before replacing the current document. The version 1 format and legacy browser storage keys remain compatible, so existing projects and autosaves are preserved. New documents prompt when file-unsaved changes exist.
 
 Changes also autosave to this browser's localStorage. Reloading recovers the most recent document. Keep a project file for durable storage: clearing browser data removes device autosaves. Copy/paste uses an editor-local clipboard.
 
@@ -70,7 +71,9 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-This is an unofficial creative tool. LEGO is a trademark of the LEGO Group; no official branding or product imagery is included.
+Brickpress is independent software. LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse Brickpress. Product references identify compatible geometry; they do not grant trademark, design or copyright rights. See [NOTICE.md](NOTICE.md) for attribution and release considerations.
+
+The project remains private and has no project-wide open-source license yet. The supplied catalog has no redistribution license notice; confirm its provenance and permissions before a public release. `npm run notices` collects third-party code, font and icon licenses, and every production build includes that file. These notices do not establish clearance for the catalog or product designs.
 
 ## Reference UI boundaries
 

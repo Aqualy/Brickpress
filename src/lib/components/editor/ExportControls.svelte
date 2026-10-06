@@ -21,7 +21,7 @@
       if (format === 'json') {
         downloadBlob(
           new Blob([editor.projectText()], { type: 'application/json' }),
-          `${filename(editor.doc.name)}.legopress.json`
+          `${filename(editor.doc.name)}.brickpress.json`
         );
         editor.saved();
       } else if (format === 'svg') exportSvg(editor.doc, { mode, paper, width, grid });
@@ -104,7 +104,7 @@
     </p>
   {:else}<p class="project-export-note">
       <Icon name="layers" size={24} />All pieces, ink passes, seeds, paper, and press settings are
-      saved in an editable .legopress.json file.
+      saved in an editable .brickpress.json file.
     </p>{/if}
   {#if error}<p class="export-error" role="alert">{error}</p>{/if}
   <Button class="export-button dialog-export" disabled={busy} onclick={run}

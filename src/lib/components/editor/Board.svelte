@@ -106,6 +106,18 @@
       event.preventDefault();
       event.stopPropagation();
       editor.place(hover?.x ?? 0, hover?.y ?? 0);
+    } else if (event.key.toLowerCase() === 'i' && editor.tool === 'place' && hover) {
+      event.preventDefault();
+      event.stopPropagation();
+      const matrix = svg?.getScreenCTM();
+      if (!matrix) return;
+      const cursor = new DOMPoint(hover.x + 0.5, hover.y + 0.5).matrixTransform(matrix);
+      const uid = document
+        .elementFromPoint(cursor.x, cursor.y)
+        ?.closest('[data-uid]')
+        ?.getAttribute('data-uid');
+      if (uid) editor.pickPiece(uid);
+      else editor.notify('No piece beneath the placement cursor.');
     }
   }
   $effect(() => {
@@ -134,6 +146,13 @@
       return;
     viewport.focus({ preventScroll: true });
     const p = point(event);
+    const uid = (event.target as Element).closest('[data-uid]')?.getAttribute('data-uid');
+    if (event.button === 1 && editor.tool === 'place' && !printed && !space && uid) {
+      event.preventDefault();
+      editor.pickPiece(uid);
+      hover = inside(p) ? { x: Math.floor(p.x), y: Math.floor(p.y) } : null;
+      return;
+    }
     origin = p;
     clientOrigin = { x: event.clientX, y: event.clientY };
     if (space || editor.tool === 'hand' || event.button === 1) {
@@ -149,7 +168,6 @@
       event.preventDefault();
       return;
     } else {
-      const uid = (event.target as Element).closest('[data-uid]')?.getAttribute('data-uid');
       if (uid) {
         const row = editor.allPieces.find((item) => item.piece.uid === uid);
         if (!row || row.pass.locked) return;
@@ -278,8 +296,11 @@
   bind:clientHeight={viewportHeight}
   role="application"
   tabindex="0"
-  aria-label="Letterpress artboard. Arrow keys move selected pieces or the placement cursor. Enter places a piece. R rotates. H and arrows pan."
+  aria-label="Brickpress artboard. Arrow keys move selected pieces or the placement cursor. Enter places a piece. R rotates. H and arrows pan. Middle-click a piece in Place mode to pick its shape and orientation, or use arrows and I to pick beneath the cursor."
   onpointerdown={pointerdown}
+  onauxclick={(event) => {
+    if (event.button === 1) event.preventDefault();
+  }}
   onpointermove={pointermove}
   onpointerup={pointerup}
   onpointercancel={cancelDrag}

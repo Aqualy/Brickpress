@@ -96,7 +96,7 @@ export function parseDocument(text: string): PressDocument {
     !doc.passes.length ||
     doc.passes.length > 100
   )
-    throw new Error('This is not a supported .legopress.json project.');
+    throw new Error('This is not a supported Brickpress project.');
   if (![doc.board.width, doc.board.height].every((n) => Number.isInteger(n) && n >= 1 && n <= 128))
     throw new Error('Board dimensions must be whole numbers between 1 and 128.');
   if (
