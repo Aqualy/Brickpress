@@ -1,7 +1,8 @@
 <script lang="ts">
   import { tick, untrack } from 'svelte';
-  import { getPiece } from '../../catalog/catalog';
+  import { getPiece, pieces } from '../../catalog/catalog';
   import { bounds, canPlace, pieceTransform } from '../../geometry/geometry';
+  import { designMaskId, designMaskMarkup } from '../../geometry/design-surface';
   import { paperMarkup, passTransform } from '../../printing/print-engine';
   import type { Editor } from '../../stores/editor.svelte';
   import Piece from './Piece.svelte';
@@ -26,6 +27,7 @@
     initialPan = { x: 0, y: 0 };
   let additive = false;
   const studPixels = 32;
+  const designMasks = pieces.map(designMaskMarkup).join('');
   let board = $derived(editor.doc.board);
   let fit = $derived(
     Math.min(
@@ -336,6 +338,7 @@
       aria-label={`${editor.doc.name}, ${board.width} by ${board.height} studs`}
     >
       {@html paper}
+      {#if !printed}<defs>{@html designMasks}</defs>{/if}
       {#if !printed && editor.doc.options.grid !== 'off' && editor.gridAppearance === 'embossed'}
         <defs>
           <radialGradient id="stud-highlight" cx="35%" cy="25%"
@@ -455,8 +458,10 @@
           />{/if}
         {#each ghostPieces as ghost, i (i)}{@const p = getPiece(ghost.pieceId)!}<path
             d={p.geometry.path}
-            transform={pieceTransform(p, ghost)}
+            transform={pieceTransform(p, ghost, 1)}
             fill={ghostsValid ? editor.activePass.color : '#b42318'}
+            fill-rule={p.geometry.fillRule}
+            mask={`url(#${designMaskId(p)})`}
             opacity=".32"
             pointer-events="none"
           />{/each}

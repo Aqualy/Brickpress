@@ -1,5 +1,6 @@
 import { getPiece } from '../catalog/catalog';
 import { pieceTransform } from '../geometry/geometry';
+import { designMaskId, designMaskMarkup } from '../geometry/design-surface';
 import {
   impression,
   impressionFilter,
@@ -25,6 +26,7 @@ export function renderSvg(doc: PressDocument, options: ExportOptions): string {
   const printed = options.mode === 'print';
   const definitions: string[] = [],
     artwork: string[] = [];
+  const masked = new Set<string>();
   for (const pass of doc.passes) {
     if (!pass.visible) continue;
     const paths = pass.pieces
@@ -33,7 +35,12 @@ export function renderSvg(doc: PressDocument, options: ExportOptions): string {
         if (!piece) return '';
         const effect = impression(p, doc.printSettings);
         if (printed) definitions.push(impressionFilter(p, doc.printSettings, doc.paper));
-        return `<g${printed ? ` transform="${effect.transform}" opacity="${effect.opacity}"` : ''}><path d="${escapeXml(piece.geometry.path)}" transform="${pieceTransform(piece, p)}" fill="${pass.color}" fill-rule="${piece.geometry.fillRule}"${printed ? ` filter="url(#${effect.filterId})"` : ''}/></g>`;
+        else if (!masked.has(piece.id)) {
+          definitions.push(designMaskMarkup(piece));
+          masked.add(piece.id);
+        }
+        const transform = printed ? pieceTransform(piece, p) : pieceTransform(piece, p, 1);
+        return `<g${printed ? ` transform="${effect.transform}" opacity="${effect.opacity}"` : ''}><path data-piece-id="${piece.id}" d="${escapeXml(piece.geometry.path)}" transform="${transform}" fill="${pass.color}" fill-rule="${piece.geometry.fillRule}"${printed ? ` filter="url(#${effect.filterId})"` : ` mask="url(#${designMaskId(piece)})"`}/></g>`;
       })
       .join('');
     artwork.push(

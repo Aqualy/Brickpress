@@ -263,7 +263,7 @@ describe('individual impressions and exports', () => {
     const doc = createDocument();
     doc.passes[0].pieces = [placed(), { ...placed('2431', 2), uid: 'bar' }];
     const svg = renderSvg(doc, { mode: 'design', paper: false, width: 2048 });
-    expect(svg.match(/<path /g)).toHaveLength(2);
+    expect(svg.match(/<path data-piece-id=/g)).toHaveLength(2);
     expect(svg).not.toContain('filter=');
     expect(svg).not.toContain('stud-grid');
     expect(svg).not.toContain('paper-grain');

@@ -284,7 +284,7 @@ test('projects save, load and recover complete document data; vector and 4× tra
   await count(recovered, 2);
   await recovered.close();
   const svg = (await exportFile(page, 'SVG', false, '1', 'design')).toString('utf8');
-  expect(svg.match(/<path /g)).toHaveLength(2);
+  expect(svg.match(/<path data-piece-id=/g)).toHaveLength(2);
   expect(svg).not.toContain('filter=');
   expect(svg).not.toContain('stroke-dasharray');
   expect(svg).not.toContain('export-grid');
@@ -747,4 +747,100 @@ test('a quarter tile fits a quarter-ring cutout while real overlaps remain block
   await count(recovered, 2);
   expect((await documentState(recovered)).options.allowOverlap).toBe(false);
   await recovered.close();
+});
+
+test('design seams have a constant width across sizes, curves and diagonals', async ({ page }) => {
+  const doc = createDocument();
+  doc.name = 'Consistent design spacing';
+  doc.board = { width: 10, height: 8 };
+  doc.options.grid = 'off';
+  const poses = [
+    ['3070', 1, 1, 0],
+    ['2431', 2, 1, 0],
+    ['3070', 6, 1, 0],
+    ['3068', 2, 2, 0],
+    ['3068', 4, 2, 0],
+    ['2431', 6, 2, 90],
+    ['27925', 2, 4, 0],
+    ['25269', 2, 4, 0],
+    ['35787', 8, 4, 0],
+    ['35787', 8, 4, 180]
+  ] as const;
+  doc.passes[0].pieces = poses.map(([pieceId, x, y, rotation], i) => ({
+    uid: `seam-${i}`,
+    pieceId,
+    x,
+    y,
+    rotation,
+    seed: 171 + i
+  }));
+  await start(page, doc);
+  await count(page, poses.length);
+  await page.screenshot({ path: 'artifacts/design-spacing.png' });
+  // Rasterize only the live artwork and its definitions, with transparent seams.
+  const live = await page.locator('.artboard').evaluate((svg) => {
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    for (const child of Array.from(clone.children))
+      if (child.tagName !== 'defs' && !child.hasAttribute('data-pass')) child.remove();
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    return clone.outerHTML;
+  });
+  const vector = (await exportFile(page, 'SVG', false, '4', 'design')).toString('utf8');
+  const png = (await exportFile(page, 'PNG', false, '4', 'design')).toString('base64');
+  const measurements = await page.evaluate(
+    async ({ live, vector, png }) => {
+      const samples = [
+        { x: 2, y: 1.5, dx: 1, dy: 0 },
+        { x: 6, y: 1.5, dx: 1, dy: 0 },
+        { x: 2.7, y: 2, dx: 0, dy: 1 },
+        { x: 4, y: 3, dx: 1, dy: 0 },
+        { x: 6.5, y: 2, dx: 0, dy: 1 },
+        { x: 6, y: 3, dx: 1, dy: 0 },
+        ...[20, 45, 70].map((degrees) => {
+          const angle = (degrees * Math.PI) / 180;
+          return {
+            x: 2 + Math.cos(angle),
+            y: 4 + Math.sin(angle),
+            dx: Math.cos(angle),
+            dy: Math.sin(angle)
+          };
+        }),
+        { x: 9, y: 5, dx: Math.SQRT1_2, dy: -Math.SQRT1_2 }
+      ];
+      const results: number[][] = [];
+      for (const [index, markup] of [live, vector, png].entries()) {
+        const image = new Image();
+        const url =
+          index === 2
+            ? 'data:image/png;base64,' + markup
+            : URL.createObjectURL(new Blob([markup], { type: 'image/svg+xml' }));
+        image.src = url;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = 2560;
+        canvas.height = 2048;
+        const context = canvas.getContext('2d')!;
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        results.push(
+          samples.map(({ x, y, dx, dy }) => {
+            const transparent: number[] = [];
+            for (let step = -160; step <= 160; step++) {
+              const distance = step / 2048;
+              const px = Math.floor((x + dx * distance) * 256);
+              const py = Math.floor((y + dy * distance) * 256);
+              if (pixels[(py * canvas.width + px) * 4 + 3] < 128) transparent.push(distance);
+            }
+            return transparent.length ? transparent.at(-1)! - transparent[0] + 1 / 2048 : 0;
+          })
+        );
+        if (index !== 2) URL.revokeObjectURL(url);
+      }
+      return results;
+    },
+    { live, vector, png }
+  );
+  for (const gaps of measurements)
+    for (const gap of gaps) expect(Math.abs(gap - 0.025)).toBeLessThan(0.006);
+  expect(await documentState(page)).toEqual(doc);
 });

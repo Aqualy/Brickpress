@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getPiece } from '../../catalog/catalog';
   import { pieceTransform } from '../../geometry/geometry';
+  import { designMaskId } from '../../geometry/design-surface';
   import { impression, impressionFilter } from '../../printing/print-engine';
   import type { PlacedPiece, PrintSettings, PaperSettings } from '../../types/document';
   let {
@@ -17,7 +18,9 @@
     paper: PaperSettings;
   } = $props();
   let piece = $derived(getPiece(placed.pieceId));
-  let transform = $derived(piece ? pieceTransform(piece, placed) : '');
+  let transform = $derived(
+    piece ? (printed ? pieceTransform(piece, placed) : pieceTransform(piece, placed, 1)) : ''
+  );
   let effect = $derived(printed ? impression(placed, settings) : undefined);
   let filter = $derived(printed ? impressionFilter(placed, settings, paper) : '');
 </script>
@@ -26,10 +29,12 @@
   <g data-uid={placed.uid} transform={effect?.transform} opacity={effect?.opacity}>
     {#if printed}<defs>{@html filter}</defs>{/if}
     <path
+      data-piece-id={piece.id}
       d={piece.geometry.path}
       {transform}
       fill={color}
       fill-rule={piece.geometry.fillRule}
+      mask={printed ? undefined : `url(#${designMaskId(piece)})`}
       filter={effect ? `url(#${effect.filterId})` : undefined}
     />
   </g>
