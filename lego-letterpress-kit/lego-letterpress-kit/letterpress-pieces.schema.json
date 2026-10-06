@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LEGO Letterpress Piece Catalog",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "pieces"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "pieces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "designId",
+          "name",
+          "category",
+          "footprint",
+          "geometry",
+          "allowedRotations"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "designId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "rectilinear",
+              "round",
+              "curve",
+              "wedge",
+              "special"
+            ]
+          },
+          "footprint": {
+            "type": "object",
+            "required": [
+              "widthStuds",
+              "heightStuds"
+            ],
+            "properties": {
+              "widthStuds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "heightStuds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          },
+          "geometry": {
+            "type": "object",
+            "required": [
+              "viewBox",
+              "path",
+              "fillRule",
+              "fidelity"
+            ],
+            "properties": {
+              "viewBox": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "path": {
+                "type": "string"
+              },
+              "fillRule": {
+                "enum": [
+                  "nonzero",
+                  "evenodd"
+                ]
+              },
+              "fidelity": {
+                "enum": [
+                  "high",
+                  "close",
+                  "approximate"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

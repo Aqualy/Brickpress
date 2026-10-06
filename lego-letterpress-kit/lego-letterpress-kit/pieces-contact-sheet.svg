@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="1530" viewBox="0 0 950 1530">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#111}.id{font-size:16px;font-weight:700}.name{font-size:11px}</style>
+<g transform="translate(45.0 10.0) scale(100.0)"><path d="M0 0 H1 V1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="128">3070</text>
+<text class="name" x="12" y="146">Tile 1×1</text>
+<g transform="translate(225.0 30.0) scale(60.0)"><path d="M0 0 H2 V1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="128">3069</text>
+<text class="name" x="202" y="146">Tile 1×2</text>
+<g transform="translate(415.0 40.0) scale(40.0)"><path d="M0 0 H3 V1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="128">63864</text>
+<text class="name" x="392" y="146">Tile 1×3</text>
+<g transform="translate(605.0 45.0) scale(30.0)"><path d="M0 0 H4 V1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="128">2431</text>
+<text class="name" x="582" y="146">Tile 1×4</text>
+<g transform="translate(795.0 50.0) scale(20.0)"><path d="M0 0 H6 V1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="128">6636</text>
+<text class="name" x="772" y="146">Tile 1×6</text>
+<g transform="translate(35.0 222.5) scale(15.0)"><path d="M0 0 H8 V1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="298">4162</text>
+<text class="name" x="12" y="316">Tile 1×8</text>
+<g transform="translate(235.0 180.0) scale(50.0)"><path d="M0 0 H2 V1 H1 V2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="298">14719</text>
+<text class="name" x="202" y="316">Tile 2×2 Corner</text>
+<g transform="translate(425.0 180.0) scale(50.0)"><path d="M0 0 H2 V2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="298">3068</text>
+<text class="name" x="392" y="316">Tile 2×2</text>
+<g transform="translate(605.0 190.0) scale(40.0)"><path d="M0 0 H3 V2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="298">26603</text>
+<text class="name" x="582" y="316">Tile 2×3</text>
+<g transform="translate(795.0 200.0) scale(30.0)"><path d="M0 0 H4 V2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="298">87079</text>
+<text class="name" x="772" y="316">Tile 2×4</text>
+<g transform="translate(35.0 380.0) scale(20.0)"><path d="M0 0 H6 V2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="468">69729</text>
+<text class="name" x="12" y="486">Tile 2×6</text>
+<g transform="translate(235.0 350.0) scale(25.0)"><path d="M0 0 H4 V4 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="468">1751</text>
+<text class="name" x="202" y="486">Tile 4×4</text>
+<g transform="translate(415.0 370.0) scale(15.0)"><path d="M0 0 H8 V4 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="468">8165</text>
+<text class="name" x="392" y="486">Tile 4×8</text>
+<g transform="translate(615.0 350.0) scale(16.666666666666668)"><path d="M0 0 H6 V6 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="468">10202</text>
+<text class="name" x="582" y="486">Tile 6×6</text>
+<g transform="translate(795.0 370.0) scale(7.5)"><path d="M0 0 H16 V8 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="468">90498</text>
+<text class="name" x="772" y="486">Tile 8×16</text>
+<g transform="translate(45.0 520.0) scale(100.0)"><path d="M0.0 0.5 A0.5 0.5 0 1 0 1.0 0.5 A0.5 0.5 0 1 0 0.0 0.5 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="638">98138</text>
+<text class="name" x="12" y="656">Tile Round 1×1</text>
+<g transform="translate(235.0 520.0) scale(100.0)"><path d="M0 0 H0.5 A0.5 0.5 0 0 1 0.5 1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="638">24246</text>
+<text class="name" x="202" y="656">Tile 1×1 with Rounded End</text>
+<g transform="translate(415.0 540.0) scale(60.0)"><path d="M0.5 0 H1.5 A0.5 0.5 0 0 1 2 0.5 V0.5 A0.5 0.5 0 0 1 1.5 1 H0.5 A0.5 0.5 0 0 1 0 0.5 V0.5 A0.5 0.5 0 0 1 0.5 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="638">1126</text>
+<text class="name" x="392" y="656">Tile Round 1×2 Oval</text>
+<g transform="translate(615.0 520.0) scale(50.0)"><path d="M0 1 A1 1 0 1 0 2 1 A1 1 0 1 0 0 1 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="638">14769</text>
+<text class="name" x="582" y="656">Tile Round 2×2</text>
+<g transform="translate(805.0 520.0) scale(50.0)"><path d="M0 0 H1.0 A1.0 1.0 0 0 1 1.0 2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="638">5520</text>
+<text class="name" x="772" y="656">Tile 2×2 with Rounded End</text>
+<g transform="translate(35.0 700.0) scale(40.0)"><path d="M1.0 0 H2.0 A1.0 1.0 0 0 1 3 1.0 V1.0 A1.0 1.0 0 0 1 2.0 2 H1.0 A1.0 1.0 0 0 1 0 1.0 V1.0 A1.0 1.0 0 0 1 1.0 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="808">7853</text>
+<text class="name" x="12" y="826">Tile 2×3 with Rounded Ends</text>
+<g transform="translate(225.0 710.0) scale(30.0)"><path d="M1.0 0 H3.0 A1.0 1.0 0 0 1 4 1.0 V1.0 A1.0 1.0 0 0 1 3.0 2 H1.0 A1.0 1.0 0 0 1 0 1.0 V1.0 A1.0 1.0 0 0 1 1.0 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="808">66857</text>
+<text class="name" x="202" y="826">Tile 2×4 with Rounded Ends</text>
+<g transform="translate(425.0 690.0) scale(100.0)"><path d="M0 0 H1 A1 1 0 0 1 0 1 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="808">25269</text>
+<text class="name" x="392" y="826">Tile Round 1×1 Quarter</text>
+<g transform="translate(605.0 710.0) scale(60.0)"><path d="M0 1 A1 1 0 0 1 2 1 L0 1 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="808">1748</text>
+<text class="name" x="582" y="826">Tile Round 1×2 Half Circle</text>
+<g transform="translate(805.0 690.0) scale(50.0)"><path d="M1 0 H2 V1 A1 1 0 0 0 1 2 H0 V1 A1 1 0 0 0 1 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="808">3396</text>
+<text class="name" x="772" y="826">Tile 2×2 with Two</text>
+<text class="name" x="772" y="839">Quarter-Round Cutouts</text>
+<g transform="translate(45.0 860.0) scale(33.333333333333336)"><path d="M0.0 1.5 A1.5 1.5 0 1 0 3.0 1.5 A1.5 1.5 0 1 0 0.0 1.5 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="978">67095</text>
+<text class="name" x="12" y="996">Tile Round 3×3</text>
+<g transform="translate(235.0 860.0) scale(16.666666666666668)"><path d="M0 3 A3 3 0 1 0 6 3 A3 3 0 1 0 0 3 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="978">7212</text>
+<text class="name" x="202" y="996">Tile Round 6×6</text>
+<g transform="translate(415.0 865.0) scale(15.0)"><path d="M3.0 0 H5.0 A3.0 3.0 0 0 1 8 3.0 V3.0 A3.0 3.0 0 0 1 5.0 6 H3.0 A3.0 3.0 0 0 1 0 3.0 V3.0 A3.0 3.0 0 0 1 3.0 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="978">65474</text>
+<text class="name" x="392" y="996">Tile 6×8 with Rounded Ends</text>
+<g transform="translate(627.5 860.0) scale(25.0)"><path d="M0.5 2.25 A1.0 1.0 0 1 0 2.5 2.25 A1.0 1.0 0 1 0 0.5 2.25 Z M0.15000000000000002 0.8 A0.5 0.5 0 1 0 1.15 0.8 A0.5 0.5 0 1 0 0.15000000000000002 0.8 Z M1.85 0.8 A0.5 0.5 0 1 0 2.85 0.8 A0.5 0.5 0 1 0 1.85 0.8 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="978">74169</text>
+<text class="name" x="582" y="996">3×4×⅔ Mickey Mouse Tile</text>
+<g transform="translate(805.0 860.0) scale(50.0)"><path d="M1 0 H2 A2 2 0 0 1 0 2 V1 A1 1 0 0 0 1 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="978">27925</text>
+<text class="name" x="772" y="996">Tile 2×2 Quarter Ring</text>
+<g transform="translate(45.0 1030.0) scale(33.333333333333336)"><path d="M2 0 H3 A3 3 0 0 1 0 3 V2 A2 2 0 0 0 2 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="1148">79393</text>
+<text class="name" x="12" y="1166">Tile 3×3 Quarter Ring</text>
+<g transform="translate(235.0 1030.0) scale(25.0)"><path d="M3 0 H4 A4 4 0 0 1 0 4 V3 A3 3 0 0 0 3 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="1148">27507</text>
+<text class="name" x="202" y="1166">Tile 4×4 Quarter Ring</text>
+<g transform="translate(425.0 1030.0) scale(25.0)"><path d="M1 0 H3 A1 1 0 0 1 4 1 V3 A1 1 0 0 1 3 4 H1 A1 1 0 0 1 0 3 V1 A1 1 0 0 1 1 0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="1148">68869</text>
+<text class="name" x="392" y="1166">Tile 4×4×⅔ with Rounded</text>
+<text class="name" x="392" y="1179">Corners</text>
+<g transform="translate(605.0 1040.0) scale(40.0)"><path d="M0 0 H2 L3 1 L2 2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="1148">22385</text>
+<text class="name" x="582" y="1166">Tile 2×3 Pentagonal</text>
+<g transform="translate(805.0 1030.0) scale(50.0)"><path d="M0 0 L2 2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="1148">35787</text>
+<text class="name" x="772" y="1166">Tile 2×2 Triangular</text>
+<g transform="translate(45.0 1200.0) scale(50.0)"><path d="M0 0 H2 V1 H1.5 L1 1.5 V2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="1318">27263</text>
+<text class="name" x="12" y="1336">Tile 2×2 Corner with 45° Cut</text>
+<g transform="translate(225.0 1220.0) scale(60.0)"><path d="M0 0 H2 V1 H1 L0 .5 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="202" y="1318">5091</text>
+<text class="name" x="202" y="1336">Tile 1×2 45° Corner Left</text>
+<g transform="translate(415.0 1220.0) scale(60.0)"><path d="M0 0 H2 L2 .5 L1 1 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="392" y="1318">5092</text>
+<text class="name" x="392" y="1336">Tile 1×2 45° Corner Right</text>
+<g transform="translate(615.0 1200.0) scale(50.0)"><path d="M0 0 H1.1 L2 2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="582" y="1318">7828</text>
+<text class="name" x="582" y="1336">63° 2×2 Wedge Tile Left</text>
+<g transform="translate(805.0 1200.0) scale(50.0)"><path d="M.9 0 H2 V2 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="772" y="1318">7829</text>
+<text class="name" x="772" y="1336">63° 2×2 Wedge Tile Right</text>
+<g transform="translate(45.0 1370.0) scale(25.0)"><path d="M0 0 L4 4 H0 Z" fill="#111" fill-rule="nonzero"/></g>
+<text class="id" x="12" y="1488">7975</text>
+<text class="name" x="12" y="1506">Tile 4×4 Triangular</text>
+</svg>
