@@ -110,10 +110,10 @@ accessibility, enlarged-text, export, preset, tracing and 2,000-piece scenarios.
 
 ## Outstanding platform checks
 
-- macOS Apple Silicon/Intel and Linux builds, native smoke runs, actual dialogs,
-  and installation are configured in GitHub Actions but have not been executed
-  from this Windows workspace. Hosted tests are held pending confirmation that
-  paid Actions usage is disabled; the source push skips automatic CI.
+- macOS Apple Silicon/Intel and Linux builds and native smoke runs are configured
+  in GitHub Actions. The now-public repository uses free standard hosted runners;
+  the dedicated test-installer run will validate these platforms. Actual dialogs
+  and interactive installation still require manual checks on each OS.
 - The zero-budget macOS configuration has a free ad hoc signature. Its merged
   Tauri configuration was checked locally; signing and Gatekeeper behavior still
   require a macOS build and installation check. The installer checksum generator

@@ -1,6 +1,6 @@
 [package]
 name = "brickpress"
-version = "1.0.0"
+version = "1.0.1"
 description = "A desktop studio for brick-based print compositions"
 authors = ["Aqualy"]
 edition = "2021"
