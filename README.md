@@ -1,5 +1,11 @@
 # Brickpress
 
+The Library contains all 41 catalog shapes. Drag in Place mode to fill a path, or use arrows and Enter for keyboard placement. Ink passes can be dragged by their grips; focused grips also reorder with Up/Down. There is one Add ink pass control per view.
+
+Print controls appear only in **Print Preview**. Give the current press settings a name and choose **Save** to retain all eleven controls as a custom preset on this device. The Export tab previews the chosen design/print mode, paper background, and grid before saving.
+
+**Compatible printing heights only** in Grid settings restricts placement to shapes with standard printing heights. It does not alter the rendered impression.
+
 A local studio for modular tile compositions and simulated letterpress impressions, available in the browser and as a Tauri 2 desktop application. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas is used only to rasterize PNG exports. No accounts or remote backend.
 
 ## Run
@@ -36,7 +42,7 @@ Desktop Save updates the opened project file. Save As chooses another location, 
 
 ## Working in the studio
 
-- Pick an essential piece, or use **Piece filters** to browse **All pieces**. Vertical categories show the full category catalog. Thumbnails preview the active ink. Click the board to stamp a piece, or drag it from the palette. Choosing a piece focuses the artboard: arrows move the placement cursor, Enter stamps, and **R** rotates.
+- Browse all 41 pieces in one library, using search and categories to narrow the catalog. Thumbnails preview the active ink. Click the board to stamp a piece, or drag it from the palette. Choosing a piece focuses the artboard: arrows move the placement cursor, Enter stamps, and **R** rotates.
 - In **Place** mode, middle-click an existing piece to pick its shape, rotation and reflections, keeping the active ink. For keyboard sampling, use arrows to move the placement cursor over a piece, then press **I**. Sampling also works on locked passes and changes only the placement tool. Middle-drag empty space, or use **H** / Space-drag, to pan.
 - The palette’s **Presets** tab saves all visible pieces or just the selection as a named composition. Empty margins are trimmed; ink colors, pass order, rotations and reflections are preserved. Drag a preset onto any project, or choose it and use arrows, **R**, and Enter. Pieces keep their stud dimensions. The board is never resized; placements that do not fit, collide, or violate physical mode are rejected without partial insertion. A successful placement is one undoable transaction. Rename, delete, import, and export presets from the library controls.
 - **Grid → Tracing image** loads a PNG, JPEG, WebP, GIF, AVIF or BMP beneath the pieces. Adjust opacity and visibility; unlock position to edit X, Y and width in studs, or fit and center the guide. Image proportions stay fixed. Tracing images are saved in IndexedDB in the browser and in application data on desktop, and recovered on reload; New/Open clears the current guide. They are hidden in Print Preview and excluded from project, SVG and PNG exports. Supported images are limited to 20 MB and 40 megapixels.
@@ -47,10 +53,10 @@ Desktop Save updates the opened project file. Save As chooses another location, 
 - Space-drag pans. **H** plus arrows pans with the keyboard. The wheel zooms around the pointer. Size and zoom controls sit below the canvas; the corner icon fits the artboard, the percentage button resets to 100%, and the main menu includes 200%.
 - Drag the separators to resize desktop panels, or focus a separator and use the arrow keys. **Reset panel widths** in the main menu restores the reference proportions. Below 1,000 pixels the same panels become modal drawers, keeping inspector choices intact.
 - Each color is an ink pass. Recoloring selected pieces moves them into a matching or new pass. Use pass actions to recolor, lock, reorder, or delete. Names can be edited directly; expand passes in **Layers** to select individual pieces.
-- **Properties** contains inks, passes, paper, and four primary print controls. Open **Advanced print settings** for the other seven controls, presets, and reseeding. Registration error displays the maximum per-axis offset in millimeters, using the existing normalized simulation parameter.
+- **Properties** contains inks, passes, and paper. In **Print Preview**, it also shows four primary print controls and named presets. Open **Advanced print settings** for the other seven controls and reseeding. Registration error displays the maximum per-axis offset in millimeters, using the existing normalized simulation parameter.
 - The inspector’s **Export** tab contains PNG, SVG, and project export options. Selection actions appear in **Properties**, or above the canvas when that section is unavailable. Save status appears in the footer.
-- **Grid** contains style, intervals, symmetry, overlap, and physical mode. Optional embossed studs are a Design-mode editor guide. The appearance preference is saved separately from projects and never included in exports; Flat remains the default.
-- Physical mode permits only catalog pieces with standard, one-plate printing surfaces. The two non-standard-height pieces stay visible but disabled in the palette. Existing non-standard pieces must be removed before enabling that mode.
+- **Grid** contains style, intervals, symmetry, overlap, and **Compatible printing heights only**. Optional embossed studs are a Design-mode editor guide. The appearance preference is saved separately from projects and never included in exports; Flat remains the default.
+- **Compatible printing heights only** permits pieces with standard, one-plate printing surfaces. The two non-standard-height pieces stay visible but disabled in the palette. Existing non-standard pieces must be removed before enabling that constraint.
 - Optional symmetry previews mirrored placements and creates pieces only when stamped. Explicit overlap can be enabled; it cannot be disabled until overlapping pieces are separated.
 
 ## Files and recovery

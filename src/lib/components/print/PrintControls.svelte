@@ -4,10 +4,16 @@
   import { catalogMeta } from '../../catalog/catalog';
   import Icon from '../ui/Icon.svelte';
   let { editor }: { editor: Editor } = $props();
+  let presetName = $state('');
+  const sameSettings = (a: typeof editor.doc.printSettings, b: typeof editor.doc.printSettings) =>
+    printControls.every((c) => a[c.key] === b[c.key]);
   let preset = $derived(
-    Object.entries(printPresets).find(
-      ([, settings]) => JSON.stringify(settings) === JSON.stringify(editor.doc.printSettings)
-    )?.[0] ?? 'Custom'
+    editor.customPrintPresets.find((row) => sameSettings(row.settings, editor.doc.printSettings))
+      ?.id ??
+      Object.entries(printPresets).find(([, settings]) =>
+        sameSettings(settings, editor.doc.printSettings)
+      )?.[0] ??
+      'Custom'
   );
   const primary = ['inkAmount', 'pressure', 'paperTooth', 'registrationError'];
   const ordered = primary.map((key) => printControls.find((c) => c.key === key)!);
@@ -45,21 +51,58 @@
 {/snippet}
 <section class="property-section print-controls">
   <h3>Print Settings</h3>
+  <label class="field-label"
+    >Press preset<select
+      aria-label="Print preset"
+      value={preset}
+      onchange={(e) => {
+        const settings =
+          editor.customPrintPresets.find((row) => row.id === e.currentTarget.value)?.settings ??
+          printPresets[e.currentTarget.value];
+        if (settings) editor.commit((doc) => (doc.printSettings = { ...settings }));
+      }}
+    >
+      <option disabled value="Custom">Custom</option>
+      <optgroup label="Built-in presets"
+        >{#each Object.keys(printPresets) as name (name)}<option>{name}</option>{/each}</optgroup
+      >
+      {#if editor.customPrintPresets.length}<optgroup label="Your presets"
+          >{#each editor.customPrintPresets as row (row.id)}<option value={row.id}
+              >{row.name}</option
+            >{/each}</optgroup
+        >{/if}
+    </select></label
+  >
+  <form
+    class="preset-save-row"
+    onsubmit={(e) => {
+      e.preventDefault();
+      editor.savePrintPreset(presetName);
+      presetName = '';
+    }}
+  >
+    <input
+      aria-label="Print preset name"
+      placeholder="Name this print preset…"
+      maxlength="80"
+      bind:value={presetName}
+    />
+    <button class="outline-button" type="submit" disabled={!presetName.trim()}
+      ><Icon name="save" size={16} />Save</button
+    >
+  </form>
+  {#if editor.customPrintPresets.some((row) => row.id === preset)}<button
+      class="text-button danger"
+      onclick={() => {
+        editor.customPrintPresets = editor.customPrintPresets.filter((row) => row.id !== preset);
+      }}>Delete saved print preset</button
+    >{/if}
+  <p class="fine-print">
+    Saves all eleven press controls on this device. Use the same name to replace a preset.
+  </p>
   {#each ordered as control (control.key)}{@render slider(control)}{/each}
   <details class="advanced-print">
     <summary>Advanced print settings</summary>
-    <label class="field-label"
-      >Press preset<select
-        aria-label="Print preset"
-        value={preset}
-        onchange={(e) => {
-          const settings = printPresets[e.currentTarget.value];
-          if (settings) editor.commit((doc) => (doc.printSettings = { ...settings }));
-        }}
-        ><option disabled value="Custom">Custom</option
-        >{#each Object.keys(printPresets) as name (name)}<option>{name}</option>{/each}</select
-      ></label
-    >
     {#each printControls.filter((c) => !primary.includes(c.key)) as control (control.key)}{@render slider(
         control
       )}{/each}
@@ -71,7 +114,22 @@
       you reseed; reseeding can be undone.
     </p>
   </details>
-  {#if editor.mode === 'design'}<p class="fine-print">
-      View these adjustments in Print Preview.
-    </p>{/if}
 </section>
+
+<style>
+  .preset-save-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .preset-save-row input {
+    min-width: 0;
+    flex: 1;
+  }
+  .preset-save-row button {
+    flex-shrink: 0;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+</style>

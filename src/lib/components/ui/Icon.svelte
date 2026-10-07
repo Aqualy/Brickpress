@@ -33,6 +33,7 @@
   import Stamp from '@lucide/svelte/icons/stamp';
   import BringToFront from '@lucide/svelte/icons/bring-to-front';
   import SendToBack from '@lucide/svelte/icons/send-to-back';
+  import GripVertical from '@lucide/svelte/icons/grip-vertical';
   let { name, size = 18 }: { name: string; size?: number } = $props();
   const icons = {
     menu: Menu,
@@ -69,7 +70,8 @@
     seed: RefreshCw,
     stamp: Stamp,
     forward: BringToFront,
-    backward: SendToBack
+    backward: SendToBack,
+    grip: GripVertical
   };
   let Glyph = $derived(icons[name as keyof typeof icons] ?? File);
 </script>

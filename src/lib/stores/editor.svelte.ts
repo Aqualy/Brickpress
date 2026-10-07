@@ -23,6 +23,7 @@ import {
 import { readTraceFile, type TraceImage, type TraceOverlay } from '../persistence/tracing';
 import type { InkPass, PlacedPiece, PressDocument } from '../types/document';
 import { platformError, type FileKind, type PlatformAdapter } from '../platform/types';
+import { parsePreferences, type SavedPrintPreset } from '../persistence/preferences';
 
 type ClipboardPiece = { piece: PlacedPiece; color: string; name: string };
 export class Editor {
@@ -45,6 +46,44 @@ export class Editor {
   inspectorTab = $state<'properties' | 'layers' | 'export'>('properties');
   panelResetToken = $state(0);
   gridAppearance = $state<'flat' | 'embossed'>('flat');
+  customPrintPresets = $state.raw<SavedPrintPreset[]>([]);
+  exportOptions = $state({
+    format: 'png',
+    paper: true,
+    grid: false,
+    scale: '2',
+    custom: 2048,
+    mode: null as 'design' | 'print' | null
+  });
+  restorePreferences(text: string) {
+    const preferences = parsePreferences(text);
+    this.gridAppearance = preferences.gridAppearance;
+    this.customPrintPresets = preferences.printPresets;
+  }
+  preferencesText() {
+    return JSON.stringify({
+      version: 1,
+      gridAppearance: this.gridAppearance,
+      printPresets: this.customPrintPresets
+    });
+  }
+  savePrintPreset(name: string) {
+    name = name.trim().slice(0, 80);
+    if (!name) return;
+    const existing = this.customPrintPresets.find(
+      (row) => row.name.toLowerCase() === name.toLowerCase()
+    );
+    if (!existing && this.customPrintPresets.length >= 100) {
+      this.notify('Save up to 100 print presets.');
+      return;
+    }
+    const row = { id: existing?.id ?? newId(), name, settings: { ...this.doc.printSettings } };
+    this.customPrintPresets = [
+      ...this.customPrintPresets.filter((item) => item.id !== row.id),
+      row
+    ];
+    this.notify(`Print preset “${name}” saved on this device.`);
+  }
   narrow = $state(false);
   drawer = $state<'palette' | 'inspector' | null>(null);
   canvasFocusToken = $state(0);
@@ -749,11 +788,14 @@ export class Editor {
     this.activePassId = id;
   }
   reorderPass(id: string, direction: number) {
+    this.movePass(id, this.doc.passes.findIndex((p) => p.id === id) + direction);
+  }
+  movePass(id: string, next: number) {
+    const index = this.doc.passes.findIndex((p) => p.id === id);
+    if (index < 0 || index === next || next < 0 || next >= this.doc.passes.length) return;
     this.commit((doc) => {
-      const index = doc.passes.findIndex((p) => p.id === id),
-        next = index + direction;
-      if (next >= 0 && next < doc.passes.length)
-        [doc.passes[index], doc.passes[next]] = [doc.passes[next], doc.passes[index]];
+      const [pass] = doc.passes.splice(index, 1);
+      doc.passes.splice(next, 0, pass);
     });
   }
   async removePass(id: string) {
@@ -804,7 +846,7 @@ export class Editor {
   }
   setPhysical(physical: boolean) {
     if (physical && this.allPieces.some(({ piece }) => !isPhysical(getPiece(piece.pieceId)!))) {
-      this.notify('Remove the non-standard-height pieces before enabling physical print mode.');
+      this.notify('Remove the non-standard-height pieces before restricting printing heights.');
       return;
     }
     this.commit((doc) => (doc.options.physical = physical));

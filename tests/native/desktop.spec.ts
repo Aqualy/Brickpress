@@ -325,6 +325,64 @@ describe('Brickpress native webview', () => {
     assert.ok((await title()).includes('●'));
   });
 
+  it('previews exports and recovers custom print presets in native app storage', async () => {
+    assert.equal(await countSelector('[aria-label="Pressure"]'), 0);
+    await button('Print preview').then((b) => b.click());
+    await browser.execute(() => {
+      const slider = document.querySelector<HTMLInputElement>('[aria-label="Pressure"]')!;
+      slider.value = '.23';
+      slider.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await $('[aria-label="Print preset name"]').setValue('Native cotton');
+    await $('.preset-save-row button').click();
+    await browser.waitUntil(
+      async () =>
+        JSON.parse(await invoke<string>('read_state', { key: 'preferences' })).printPresets
+          .length === 1
+    );
+    const settings = JSON.parse(await invoke<string>('read_state', { key: 'preferences' }));
+    assert.equal(settings.printPresets[0].settings.pressure, 0.23);
+    await reload();
+    await button('Print preview').then((b) => b.click());
+    await browser.execute(() => {
+      const select = document.querySelector<HTMLSelectElement>('[aria-label="Print preset"]')!;
+      select.value = select.querySelector<HTMLOptionElement>(
+        'optgroup[label="Your presets"] option'
+      )!.value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    assert.equal(await $('[aria-label="Pressure"]').getValue(), '0.23');
+    await $('[role="tab"][data-value="export"]').click();
+    await browser.waitUntil(async () =>
+      browser.execute(() => {
+        const image = document.querySelector<HTMLImageElement>('.export-preview img');
+        return !!image && image.complete && image.naturalWidth > 0;
+      })
+    );
+    await browser.saveScreenshot('artifacts/native/export-preview.png');
+  });
+
+  it('keeps pass keyboard focus after reordering', async () => {
+    await reset(createDocument(true));
+    await $('[role="tab"][data-value="layers"]').click();
+    await browser.execute(() =>
+      document
+        .querySelector<HTMLButtonElement>(
+          '[role="tabpanel"][data-state="active"] [aria-label="Reorder 01 · Vermilion"]'
+        )!
+        .focus()
+    );
+    await browser.keys('ArrowDown');
+    await browser.waitUntil(
+      async () =>
+        (await browser.execute(() => document.activeElement?.getAttribute('aria-label'))) ===
+        'Reorder 01 · Vermilion'
+    );
+    const rows = await $$('[role="tabpanel"][data-state="active"] .pass-block');
+    assert.equal(await rows[1].$('.pass-name').getValue(), '01 · Vermilion');
+    await browser.saveScreenshot('artifacts/native/pass-reordering.png');
+  });
+
   it('uploads a tracing image through binary IPC and excludes it from the project', async () => {
     const directory = resolve('artifacts/native/data/test-files');
     await mkdir(directory, { recursive: true });

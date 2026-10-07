@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { getPiece } from '../../catalog/catalog';
   import type { Editor } from '../../stores/editor.svelte';
   import Icon from '../ui/Icon.svelte';
@@ -7,6 +8,43 @@
   import Popover from '../ui/Popover.svelte';
   let { editor, compact = false }: { editor: Editor; compact?: boolean } = $props();
   let expanded = $state.raw<string[]>([]);
+  let dragged = $state<string | null>(null),
+    dropTarget = $state<string | null>(null),
+    after = $state(false);
+  function dragOver(event: DragEvent, id: string) {
+    if (!dragged) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    const box =
+      event.currentTarget instanceof HTMLElement
+        ? event.currentTarget.getBoundingClientRect()
+        : null;
+    dropTarget = id;
+    after = !!box && event.clientY > box.top + box.height / 2;
+  }
+  function drop(event: DragEvent, target: string) {
+    if (!dragged) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const from = editor.doc.passes.findIndex((p) => p.id === dragged);
+    const to = editor.doc.passes.findIndex((p) => p.id === target);
+    const index = to + (after ? 1 : 0) - (from < to + (after ? 1 : 0) ? 1 : 0);
+    editor.movePass(dragged, index);
+    editor.notify('Ink pass order updated.');
+    dragged = null;
+    dropTarget = null;
+  }
+  async function keyReorder(event: KeyboardEvent, id: string) {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    event.stopPropagation();
+    const handle = event.currentTarget as HTMLButtonElement;
+    editor.reorderPass(id, event.key === 'ArrowUp' ? -1 : 1);
+    editor.notify('Ink pass order updated.');
+    await tick();
+    handle.focus();
+  }
   function expand(id: string) {
     expanded = expanded.includes(id) ? expanded.filter((p) => p !== id) : [...expanded, id];
   }
@@ -23,8 +61,34 @@
     >
   </div>
   {#each editor.doc.passes as pass, index (pass.id)}
-    <div class="pass-block" class:active={editor.activePassId === pass.id}>
+    <div
+      class="pass-block"
+      class:active={editor.activePassId === pass.id}
+      class:dragging={dragged === pass.id}
+      class:drop-before={dropTarget === pass.id && !after}
+      class:drop-after={dropTarget === pass.id && after}
+      role="group"
+      aria-label={pass.name}
+      ondragover={(e) => dragOver(e, pass.id)}
+      ondrop={(e) => drop(e, pass.id)}
+    >
       <div class="pass-row">
+        <Button
+          class="icon-button pass-grip"
+          aria-label={`Reorder ${pass.name}`}
+          title="Drag to reorder; use Up or Down while focused"
+          draggable
+          ondragstart={(e) => {
+            dragged = pass.id;
+            e.dataTransfer?.setData('application/x-brickpress-pass', pass.id);
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+          }}
+          ondragend={() => {
+            dragged = null;
+            dropTarget = null;
+          }}
+          onkeydown={(e) => keyReorder(e, pass.id)}><Icon name="grip" size={14} /></Button
+        >
         {#if !compact}<Button
             class="icon-button expand-pass"
             aria-expanded={expanded.includes(pass.id)}
@@ -121,10 +185,25 @@
         </div>{/if}
     </div>
   {/each}
-  {#if !compact}<Button class="text-button add-pass" onclick={() => editor.addPass()}
-      ><Icon name="plus" size={16} /> Add ink pass</Button
-    >
+  {#if !compact}
     <p class="fine-print">
       Expand a pass to select pieces. Shift-click or Shift-Enter to select several.
     </p>{/if}
 </section>
+
+<style>
+  :global(.pass-grip) {
+    cursor: grab;
+    width: 24px;
+    min-width: 24px;
+  }
+  .dragging {
+    opacity: 0.5;
+  }
+  .drop-before {
+    border-top: 2px solid var(--blue);
+  }
+  .drop-after {
+    border-bottom: 2px solid var(--blue);
+  }
+</style>

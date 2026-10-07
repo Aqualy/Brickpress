@@ -70,8 +70,9 @@
   /></label
 >
 <label class="toggle-row"
-  ><span>Physical print mode</span><input
-    aria-label="Physical print mode"
+  ><span>Compatible printing heights only</span><input
+    aria-label="Compatible printing heights only"
+    aria-describedby="printing-height-help"
     type="checkbox"
     checked={editor.doc.options.physical}
     onchange={(e) => {
@@ -80,5 +81,9 @@
     }}
   /></label
 >
+<p id="printing-height-help" class="fine-print">
+  Restricts placement to pieces with a standard printing height. This is a construction constraint;
+  it does not change the preview.
+</p>
 
 <TracingControls {editor} />

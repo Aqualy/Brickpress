@@ -115,7 +115,7 @@ a document never saved. Recovery reopened after a restart is unsaved and has no
 active file; Save asks for a location. Invalid recovery is moved aside for
 inspection. Storage failures are shown and keep the editor available for retry.
 
-Recovery, composition presets, preferences and tracing assets live in the OS
+Recovery, composition presets, custom print presets, preferences and tracing assets live in the OS
 application data directory for `io.github.aqualy.brickpress` (usually
 `%APPDATA%\io.github.aqualy.brickpress` on Windows,
 `~/Library/Application Support/io.github.aqualy.brickpress` on macOS, and

@@ -20,9 +20,7 @@ async function grid(page: Page) {
   await page.getByRole('button', { name: 'Grid settings', exact: true }).click();
 }
 async function allPieces(page: Page) {
-  await page.getByRole('button', { name: 'Piece filters', exact: true }).click();
-  await page.getByRole('button', { name: 'All pieces', exact: true }).click();
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /^All pieces/ }).click();
 }
 async function passActions(page: Page, name: string) {
   await page.getByRole('button', { name: `Actions for ${name}`, exact: true }).click();
@@ -650,7 +648,7 @@ test('all 41 catalog pieces can be found and placed with their supplied silhouet
   const doc = createDocument();
   doc.board = { width: 48, height: 48 };
   await start(page, doc);
-  await expect(page.locator('.piece-card')).toHaveCount(10);
+  await expect(page.locator('.piece-card')).toHaveCount(41);
   await allPieces(page);
   await expect(page.locator('.piece-card')).toHaveCount(41);
   let x = 1,
@@ -746,7 +744,7 @@ test('physical mode, palette dragging, symmetry and pass hide/lock/recolor/reord
 }) => {
   await start(page);
   await grid(page);
-  await page.getByLabel('Physical print mode').check();
+  await page.getByLabel('Compatible printing heights only').check();
   await page.keyboard.press('Escape');
   await allPieces(page);
   await expect(
@@ -803,7 +801,7 @@ test('printing is deterministic, registration applies to passes, and presets/res
   await start(page, doc);
   await page.getByRole('button', { name: 'Print preview', exact: true }).click();
   await page.getByText('Advanced print settings', { exact: true }).click();
-  await expect(page.getByLabel('Print preset')).toHaveValue('Normal');
+  await expect(page.getByLabel('Print preset', { exact: true })).toHaveValue('Normal');
   const visible = doc.passes.flatMap((p) => p.pieces).length;
   await expect(page.locator('.artboard [data-uid] filter')).toHaveCount(visible);
   const original = await page.locator('.artboard [data-uid]').first().getAttribute('transform');
@@ -820,7 +818,7 @@ test('printing is deterministic, registration applies to passes, and presets/res
   expect(await page.locator('.artboard [data-uid]').first().getAttribute('transform')).toBe(
     original
   );
-  await page.getByLabel('Print preset').selectOption('Dry Ink');
+  await page.getByLabel('Print preset', { exact: true }).selectOption('Dry Ink');
   const state = await documentState(page);
   expect(state.printSettings.inkAmount).toBe(0.46);
   await page.screenshot({ path: test.info().outputPath('print-preview.png') });
@@ -980,14 +978,14 @@ test('rejected physical/overlap/resize changes leave controls accurate, and phys
   doc.passes[0].pieces = [{ uid: 'special', pieceId: '68869', x: 0, y: 0, rotation: 0, seed: 1 }];
   await start(page, doc);
   await grid(page);
-  await page.getByLabel('Physical print mode').click();
-  await expect(page.getByLabel('Physical print mode')).not.toBeChecked();
+  await page.getByLabel('Compatible printing heights only').click();
+  await expect(page.getByLabel('Compatible printing heights only')).not.toBeChecked();
   await page.keyboard.press('Escape');
   await page.locator('.artboard [data-uid]').first().locator('path').click();
   await page.keyboard.press('Control+c');
   await page.keyboard.press('Delete');
   await grid(page);
-  await page.getByLabel('Physical print mode').check();
+  await page.getByLabel('Compatible printing heights only').check();
   await page.keyboard.press('Escape');
   await page.locator('.canvas-workspace').focus();
   await page.keyboard.press('Control+v');
@@ -1153,7 +1151,7 @@ test('reference screenshots and enlarged text preserve accessible controls', asy
     for (const { element, size } of sizes) element.style.fontSize = `${size}px`;
   });
   await page.getByRole('button', { name: 'Grid settings', exact: true }).click();
-  await expect(page.getByLabel('Physical print mode')).toBeVisible();
+  await expect(page.getByLabel('Compatible printing heights only')).toBeVisible();
   await page.keyboard.press('Escape');
   for (const tab of await page.getByRole('tab').all()) {
     expect(await tab.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
@@ -1243,7 +1241,7 @@ test('piece tooltips expose catalog metadata on keyboard focus and dismiss with 
   await page.keyboard.press('Enter');
   await expect(page.locator('.canvas-workspace')).toBeFocused();
   await grid(page);
-  await page.getByLabel('Physical print mode').check();
+  await page.getByLabel('Compatible printing heights only').check();
   await page.keyboard.press('Escape');
   await allPieces(page);
   const incompatible = page.getByRole('button', {
@@ -1561,7 +1559,7 @@ test('preset placement works with the keyboard in drawers and respects physical 
   await expect(page.locator('.toast')).toContainText('non-standard-height');
   await count(page, 0);
   await grid(page);
-  await page.getByLabel('Physical print mode').uncheck();
+  await page.getByLabel('Compatible printing heights only').uncheck();
   await page.keyboard.press('Escape');
   await page.locator('.canvas-workspace').focus();
   await page.keyboard.press('ArrowRight');

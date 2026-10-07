@@ -9,7 +9,6 @@
   import Presets from './Presets.svelte';
   let { editor }: { editor: Editor } = $props();
   let query = $state(''),
-    scope = $state('default'),
     category = $state('all'),
     compatible = $state(false);
   let filtered = $derived(
@@ -24,7 +23,6 @@
             ? ' wedges angular'
             : '');
       return (
-        (query || scope === 'all' || p.defaultToolbar) &&
         (category === 'all' || p.category === category) &&
         (!compatible || isPhysical(p)) &&
         `${p.name} ${p.id} ${aliases} ${dims}`
@@ -55,22 +53,8 @@
         <Popover label="Piece filters" className="icon-button" width={270}>
           {#snippet trigger()}<Icon name="settings" size={18} />{/snippet}
           <h3>Piece filters</h3>
-          <div class="segmented palette-scope">
-            <button
-              class:active={scope === 'default'}
-              aria-pressed={scope === 'default'}
-              onclick={() => {
-                scope = 'default';
-                category = 'all';
-              }}>Essentials</button
-            ><button
-              class:active={scope === 'all'}
-              aria-pressed={scope === 'all'}
-              onclick={() => (scope = 'all')}>All pieces</button
-            >
-          </div>
           <label class="check-row"
-            ><input type="checkbox" bind:checked={compatible} /> Physical compatible only</label
+            ><input type="checkbox" bind:checked={compatible} /> Standard printing heights only</label
           >
           <p class="fine-print">
             {pieces.length} catalog pieces. Thumbnails preview the active ink.
@@ -102,15 +86,12 @@
             <button
               class:active={category === 'all'}
               aria-current={category === 'all' ? 'true' : undefined}
-              onclick={() => (category = 'all')}
-              >{scope === 'default' ? 'Essentials' : 'All pieces'}<small>{filtered.length}</small
-              ></button
+              onclick={() => (category = 'all')}>All pieces<small>{pieces.length}</small></button
             >
             {#each categories as item (item.id)}<button
                 class:active={category === item.id}
                 aria-current={category === item.id ? 'true' : undefined}
                 onclick={() => {
-                  scope = 'all';
                   category = item.id;
                 }}>{item.name}</button
               >{/each}

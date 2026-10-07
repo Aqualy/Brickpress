@@ -107,7 +107,7 @@
                 {getPiece(first.pieceId)?.surfaceHeightPlates} plate printing height.
               </p>{/if}
           </section>{/if}
-        <PaperControls {editor} /><PrintControls {editor} />
+        <PaperControls {editor} />{#if editor.mode === 'print'}<PrintControls {editor} />{/if}
       </Tabs.Content>
       <Tabs.Content value="layers" tabindex={-1}>
         <Layers {editor} />
@@ -118,6 +118,10 @@
     </div>
   </Tabs.Root>
   <div class="inspector-footer">
-    <span>{editor.doc.options.physical ? 'Physical print mode' : 'Digital print mode'}</span>
+    <span
+      >{editor.doc.options.physical
+        ? 'Standard printing heights only'
+        : 'All printing heights'}</span
+    >
   </div>
 </aside>

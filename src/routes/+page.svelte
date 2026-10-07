@@ -55,14 +55,7 @@
       controller ??= new DocumentController(editor, platform, flushStorage);
       await recoverRecord('recovery', (text) => controller!.recover(text));
       await recoverRecord('presets', (text) => editor.restorePresets(text));
-      await recoverRecord('preferences', (text) => {
-        if (platform!.desktop) {
-          const preferences = JSON.parse(text);
-          if (!preferences || !['flat', 'embossed'].includes(preferences.gridAppearance))
-            throw new Error('The appearance preference is invalid.');
-          editor.gridAppearance = preferences.gridAppearance;
-        } else editor.gridAppearance = text === 'embossed' ? 'embossed' : 'flat';
-      });
+      await recoverRecord('preferences', (text) => editor.restorePreferences(text));
       try {
         const trace = await platform.loadTrace();
         if (!disposed) editor.restoreTrace(trace);
@@ -132,12 +125,16 @@
   });
   $effect(() => {
     if (!ready) return;
-    const preference = platform?.desktop
-      ? JSON.stringify({ gridAppearance: editor.gridAppearance })
-      : editor.gridAppearance;
-    void platform
-      ?.writeState('preferences', preference)
-      .catch((error) => editor.notify(platformError(error).message));
+    const preference = editor.preferencesText();
+    const timer = setTimeout(() => {
+      if (controller?.closing) return;
+      void platform
+        ?.writeState('preferences', preference)
+        .catch((error) =>
+          editor.notify(`Editor preferences could not be saved: ${platformError(error).message}`)
+        );
+    }, 180);
+    return () => clearTimeout(timer);
   });
   $effect(() => {
     if (!ready) return;
@@ -172,18 +169,14 @@
     await editor.flushPresets();
     await platform.writeState('presets', JSON.stringify(editor.presets));
     await platform.saveTrace(editor.trace);
-    await platform.writeState(
-      'preferences',
-      platform.desktop
-        ? JSON.stringify({ gridAppearance: editor.gridAppearance })
-        : editor.gridAppearance
-    );
+    await platform.writeState('preferences', editor.preferencesText());
     if (includeRecovery) await platform.writeState('recovery', editor.projectText());
   }
   function flushAutosave() {
     if (!ready || platform?.desktop) return;
     try {
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(editor.doc));
+      localStorage.setItem('form-impression-grid-appearance', editor.preferencesText());
     } catch {
       /* The visible autosave status already reports storage failures. */
     }

@@ -6,30 +6,42 @@ version-1 documents, ink colors, dimensions, and paper presets are preserved.
 
 ## Completed checks
 
-| Check                           | Result                                                                               |
-| ------------------------------- | ------------------------------------------------------------------------------------ |
-| Svelte / TypeScript analysis    | 0 errors, 0 warnings                                                                 |
-| Unit tests                      | 80 passed                                                                            |
-| Catalog validation              | All 41 pieces valid                                                                  |
-| Browser production build        | Passed, static `build/` output                                                       |
-| Browser Playwright scenarios    | All 31 passed against production preview                                             |
-| Windows native scenarios        | All 16 passed, including application Quit protection and the real-dialog check       |
-| Windows native clean close      | Passed; process exits normally after flushing version-1 recovery in isolated storage |
-| Rust tests                      | All 8 passed                                                                         |
-| Rust formatting                 | Passed                                                                               |
-| Clippy                          | Passed with warnings denied, production and `desktop-e2e` features                   |
-| Windows production build        | Passed, x64 NSIS installer generated                                                 |
-| Windows installer smoke         | Install, bundled notices, launch, single instance, clean close, and uninstall passed |
-| npm production dependency audit | 0 reported vulnerabilities (`npm audit --omit=dev`)                                  |
+| Check                           | Result                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------- |
+| Svelte / TypeScript analysis    | 0 errors, 0 warnings                                                                  |
+| Unit tests                      | 86 passed                                                                             |
+| Catalog validation              | All 41 pieces valid                                                                   |
+| Browser production build        | Passed, static `build/` output                                                        |
+| Browser Playwright scenarios    | All 35 passed against the fixed-layout production build                               |
+| Windows native scenarios        | Preceding UI build: 18 passed, including Quit protection and real-dialog cancellation |
+| Windows native clean close      | Passed; process exits normally after flushing version-1 recovery in isolated storage  |
+| Rust tests                      | All 8 passed                                                                          |
+| Rust formatting                 | Passed                                                                                |
+| Clippy                          | Passed with warnings denied, production and `desktop-e2e` features                    |
+| Windows production build        | Passed, x64 NSIS installer generated                                                  |
+| Windows installer smoke         | Install, bundled notices, launch, single instance, clean close, and uninstall passed  |
+| npm production dependency audit | 0 reported vulnerabilities (`npm audit --omit=dev`)                                   |
 
-The latest editor update adds workspace marquee selection and consolidates Export,
-size, zoom, selection actions, and save status. The 27 browser scenarios include
-outside-artboard dragging in both directions, additive selection, hidden/locked
-passes, zoom/pan alignment, cancellation, and desktop/320 px control layouts.
-Svelte analysis, all 69 unit tests, the production build, and formatting checks
-passed again. Native smoke and installer behavior results above are from the
-preceding Tauri integration; native selectors have been updated for these UI
-changes, but the native suite has not been rerun for this update.
+The latest UI update adds export previews, Print-Preview-only press controls,
+custom print presets, and drag and keyboard ink-pass ordering. The toolbar,
+library and Inspector have fixed positions, with resizable sidebar widths and
+responsive drawers. Preferences migrate the
+original browser string and desktop appearance record without changing version-1
+projects. The library opens with all 41 pieces; printing-height constraints are
+now named explicitly rather than presented as a visual mode.
+
+Svelte analysis and formatting checks passed. Six new unit checks cover preference
+validation/migration, saved press controls, supported preference fields and
+undoable pass insertion. Four added browser scenarios cover export-renderer previews,
+tab-persistent export choices, custom presets, pass dragging, focus and accessibility.
+Native scenarios confirm export image decoding, print-preset recovery through
+application data storage, and pass keyboard focus. The fixed-layout UI passed
+Svelte/TypeScript analysis, all 86 unit tests, all 35 browser scenarios, catalog validation and a production
+frontend build. macOS/Linux runs are planned next, using standard hosted runners
+in the now-public repository.
+
+The existing v1.0.0 GitHub release and preceding install/uninstall smoke result
+remain unchanged. The latest frontend has not yet been packaged into installers.
 
 The branding update uses the supplied transparent artwork without changing the
 source bytes. The production frontend and Windows NSIS installer built again.
@@ -60,9 +72,9 @@ repeatable. The test driver does not implement HTML option selection reliably;
 that control test sends its standard change event. Browser tests exercise native
 select controls through Playwright.
 
-## Windows test installer
+## Previous v1.0.0 release installer
 
-`src-tauri/target/release/bundle/nsis/Brickpress_1.0.0_x64-setup.exe`
+`artifacts/installers/Brickpress_1.0.0_x64-setup-branded.exe`
 
 Size: 3,387,715 bytes. SHA-256:
 
