@@ -2,6 +2,7 @@
   import { tick, untrack } from 'svelte';
   import { getPiece, pieces } from '../../catalog/catalog';
   import { bounds, canPlace, pieceTransform } from '../../geometry/geometry';
+  import { placementPath } from '../../geometry/placement-path';
   import { designMaskId, designMaskMarkup } from '../../geometry/design-surface';
   import { paperMarkup, passTransform } from '../../printing/print-engine';
   import type { Editor } from '../../stores/editor.svelte';
@@ -19,7 +20,9 @@
     space = $state(false);
   let hover = $state.raw<{ x: number; y: number } | null>(null);
   let delta = $state.raw({ x: 0, y: 0 });
-  let dragKind = $state<'pan' | 'move' | 'box' | null>(null);
+  let dragKind = $state<'pan' | 'move' | 'box' | 'place' | null>(null);
+  let dragPointerId: number | null = null;
+  let paintFrom = { x: 0, y: 0 };
   let marquee = $state.raw<{ x: number; y: number; width: number; height: number } | null>(null);
   let hint = $state(true);
   let origin = { x: 0, y: 0 },
@@ -155,6 +158,10 @@
   }
   function pointerdown(event: PointerEvent) {
     if (event.button !== 0 && event.button !== 1) return;
+    if (dragKind) {
+      event.preventDefault();
+      return;
+    }
     if (
       (event.target as Element).closest(
         'button, input, select, textarea, a, summary, [contenteditable="true"], .onboarding, .contextual-toolbar'
@@ -182,9 +189,17 @@
         if (!event.shiftKey) editor.selected = [];
         return;
       }
-      editor.place(Math.floor(p.x), Math.floor(p.y));
+      if (editor.activePresetId) {
+        editor.place(Math.floor(p.x), Math.floor(p.y));
+        event.preventDefault();
+        return;
+      }
+      if (!editor.beginPlacementStroke()) return;
+      dragKind = 'place';
+      paintFrom = p;
+      hover = { x: Math.floor(p.x), y: Math.floor(p.y) };
+      editor.paintPlacement(hover.x, hover.y);
       event.preventDefault();
-      return;
     } else {
       if (uid) {
         const row = editor.allPieces.find((item) => item.piece.uid === uid);
@@ -202,11 +217,37 @@
       }
       event.preventDefault();
     }
-    if (dragKind) viewport.setPointerCapture(event.pointerId);
+    if (dragKind) {
+      dragPointerId = event.pointerId;
+      viewport.setPointerCapture(event.pointerId);
+    }
+  }
+  function paintTo(p: { x: number; y: number }) {
+    for (const cell of placementPath(paintFrom, p, board)) editor.paintPlacement(cell.x, cell.y);
+    paintFrom = p;
   }
   function pointermove(event: PointerEvent) {
+    if (dragKind && event.pointerId !== dragPointerId) return;
     const p = point(event);
-    if (dragKind === 'pan') {
+    if (dragKind === 'place') {
+      if (
+        !editor.placementStrokeActive ||
+        editor.tool !== 'place' ||
+        printed ||
+        editor.activePresetId
+      ) {
+        editor.finishPlacementStroke();
+        cancelDrag();
+        return;
+      }
+      if (!(event.buttons & 1)) {
+        pointerup(event);
+        return;
+      }
+      for (const sample of event.getCoalescedEvents?.() ?? []) paintTo(point(sample));
+      paintTo(p);
+      hover = inside(p) ? { x: Math.floor(p.x), y: Math.floor(p.y) } : null;
+    } else if (dragKind === 'pan') {
       panX = initialPan.x + event.clientX - clientOrigin.x;
       panY = initialPan.y + event.clientY - clientOrigin.y;
     } else if (dragKind === 'move')
@@ -221,6 +262,11 @@
     else hover = inside(p) ? { x: Math.floor(p.x), y: Math.floor(p.y) } : null;
   }
   function pointerup(event: PointerEvent) {
+    if (dragPointerId !== null && event.pointerId !== dragPointerId) return;
+    if (dragKind === 'place') {
+      paintTo(point(event));
+      editor.finishPlacementStroke();
+    }
     if (dragKind === 'move' && (delta.x || delta.y)) editor.move(delta.x, delta.y);
     if (dragKind === 'box' && marquee) {
       const box = marquee;
@@ -244,9 +290,14 @@
       viewport.releasePointerCapture(event.pointerId);
   }
   function cancelDrag() {
+    if (dragKind === 'place') editor.finishPlacementStroke(true);
     dragKind = null;
     delta = { x: 0, y: 0 };
     marquee = null;
+    const pointerId = dragPointerId;
+    dragPointerId = null;
+    if (pointerId !== null && viewport?.hasPointerCapture(pointerId))
+      viewport.releasePointerCapture(pointerId);
   }
   function wheel(event: WheelEvent) {
     event.preventDefault();
@@ -314,7 +365,7 @@
   bind:clientHeight={viewportHeight}
   role="application"
   tabindex="0"
-  aria-label="Brickpress artboard. Arrow keys move selected pieces or the placement cursor. Enter places a piece. R rotates. H and arrows pan. Middle-click a piece in Place mode to pick its shape and orientation, or use arrows and I to pick beneath the cursor."
+  aria-label="Brickpress artboard. In Place mode, click or drag to fill the grid with pieces. Arrow keys move selected pieces or the placement cursor. Enter places a piece. R rotates. H and arrows pan. Middle-click a piece in Place mode to pick its shape and orientation, or use arrows and I to pick beneath the cursor."
   onpointerdown={pointerdown}
   onauxclick={(event) => {
     if (event.button === 1) event.preventDefault();
@@ -573,7 +624,7 @@
       <span class="onboarding-mark"><Icon name="stamp" size={19} /></span>
       <div>
         <strong>Choose a piece to begin</strong>
-        <p>Click the grid or use arrows + Enter. <kbd>R</kbd> rotates.</p>
+        <p>Click or drag to fill. Arrows + Enter also place pieces. <kbd>R</kbd> rotates.</p>
       </div>
       <button class="icon-button" aria-label="Dismiss editor hint" onclick={() => (hint = false)}
         ><Icon name="close" size={14} /></button

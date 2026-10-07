@@ -39,6 +39,7 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ],
@@ -48,7 +49,17 @@
       "../static/RUST_DEPENDENCY_NOTICES.txt": "RUST_DEPENDENCY_NOTICES.txt",
       "../NOTICE.md": "NOTICE.md"
     },
-    "windows": { "nsis": { "installMode": "currentUser", "displayLanguageSelector": false } },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "headerImage": "branding/installer-header.bmp",
+        "uninstallerHeaderImage": "branding/installer-header.bmp",
+        "sidebarImage": "branding/installer-sidebar.bmp"
+      }
+    },
     "macOS": { "minimumSystemVersion": "11.0" }
   }
 }

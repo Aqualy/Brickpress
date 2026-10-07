@@ -61,6 +61,133 @@ async function openExport(page: Page) {
   await tab.click();
 }
 
+test('Place drags fill skipped squares, avoid repeated anchors and undo as one stroke', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  await start(page, doc);
+  await page.getByRole('button', { name: 'Place Tile 1×1, 3070', exact: true }).click();
+  const from = await studPoint(page, 1.5, 2.5),
+    to = await studPoint(page, 6.5, 2.5);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await count(page, 1);
+  await page.mouse.move(to.x, to.y);
+  await count(page, 6);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.up();
+  await count(page, 6);
+  const placed = await documentState(page);
+  expect(placed.passes[0].pieces.map((p) => [p.x, p.y])).toEqual(
+    [1, 2, 3, 4, 5, 6].map((x) => [x, 2])
+  );
+  await page.keyboard.press('Control+z');
+  await count(page, 0);
+  await page.keyboard.press('Control+Shift+z');
+  await count(page, 6);
+  expect(await documentState(page)).toEqual(placed);
+  const edgeStart = await studPoint(page, 0.5, 5.5),
+    outside = await studPoint(page, 9.5, 5.5);
+  await page.mouse.move(edgeStart.x, edgeStart.y);
+  await page.mouse.down();
+  await page.mouse.move(outside.x, outside.y);
+  await page.mouse.up();
+  await count(page, 14);
+  expect((await documentState(page)).passes[0].pieces.slice(6).map((p) => p.x)).toEqual([
+    0, 1, 2, 3, 4, 5, 6, 7
+  ]);
+  await page.keyboard.press('Control+z');
+  expect(await documentState(page)).toEqual(placed);
+});
+
+test('Place drags follow diagonal paths on the points grid and never duplicate a retraced stroke', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  doc.options.grid = 'points';
+  doc.options.allowOverlap = true;
+  await start(page, doc);
+  await page.getByRole('button', { name: 'Place Tile 1×1, 3070', exact: true }).click();
+  const from = await studPoint(page, 1.5, 1.5),
+    to = await studPoint(page, 6.5, 6.5);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.up();
+  await count(page, 6);
+  expect((await documentState(page)).passes[0].pieces.map((p) => [p.x, p.y])).toEqual(
+    [1, 2, 3, 4, 5, 6].map((x) => [x, x])
+  );
+});
+
+test('Place drags respect rotated footprints, occupied cells and Print Preview', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  doc.passes[0].pieces = [{ uid: 'obstacle', pieceId: '3070', x: 3, y: 3, rotation: 0, seed: 1 }];
+  await start(page, doc);
+  await page.getByRole('button', { name: 'Place Tile 1×2, 3069', exact: true }).click();
+  await page.keyboard.press('r');
+  const from = await studPoint(page, 3.5, 1.5),
+    to = await studPoint(page, 3.5, 7.5);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y);
+  await page.mouse.up();
+  await count(page, 4);
+  const placed = await documentState(page);
+  expect(placed.passes[0].pieces.slice(1).map((p) => [p.x, p.y, p.rotation])).toEqual([
+    [3, 1, 90],
+    [3, 4, 90],
+    [3, 6, 90]
+  ]);
+  await page.getByRole('button', { name: 'Print preview', exact: true }).click();
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y);
+  await page.mouse.up();
+  expect(await documentState(page)).toEqual(placed);
+});
+
+test('Escape and lost pointer capture cancel Place strokes without leaving painted pieces', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  await start(page, doc);
+  const original = await documentState(page);
+  const from = await studPoint(page, 0.5, 2.5),
+    to = await studPoint(page, 3.5, 2.5);
+  for (const cancellation of ['escape', 'capture', 'pointercancel']) {
+    await page.getByRole('button', { name: 'Place Tile 1×1, 3070', exact: true }).click();
+    await page.locator('.canvas-workspace').evaluate((el) => {
+      el.addEventListener(
+        'pointerdown',
+        (event) => el.setAttribute('data-test-pointer', String((event as PointerEvent).pointerId)),
+        { once: true }
+      );
+    });
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y);
+    await count(page, 4);
+    if (cancellation === 'escape') await page.keyboard.press('Escape');
+    else if (cancellation === 'capture')
+      await page
+        .locator('.canvas-workspace')
+        .evaluate((el) => el.releasePointerCapture(Number(el.getAttribute('data-test-pointer'))));
+    else await page.locator('.canvas-workspace').dispatchEvent('pointercancel', { pointerId: 1 });
+    await count(page, 0);
+    await page.mouse.up();
+    expect(await documentState(page)).toEqual(original);
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+  }
+});
+
 test('marquee selection starts in the workspace and respects pass visibility and locks', async ({
   page
 }) => {

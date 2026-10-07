@@ -40,42 +40,63 @@ export function bounds(p: PlacedPiece) {
   const piece = getPiece(p.pieceId)!;
   return { x: p.x, y: p.y, ...footprint(piece, p.rotation) };
 }
-export function canPlace(
-  doc: PressDocument,
-  candidates: PlacedPiece[],
-  ignored = new Set<string>()
-): boolean {
+export function createPlacementValidator(doc: PressDocument, ignored = new Set<string>()) {
   const occupied = new Map<string, PlacedPiece[]>();
-  const register = (p: PlacedPiece, cells = occupiedCells(p)) => {
+  const register = (
+    ownersByCell: Map<string, PlacedPiece[]>,
+    p: PlacedPiece,
+    cells = occupiedCells(p)
+  ) => {
     for (const cell of cells) {
-      const owners = occupied.get(cell);
+      const owners = ownersByCell.get(cell);
       if (owners) owners.push(p);
-      else occupied.set(cell, [p]);
+      else ownersByCell.set(cell, [p]);
     }
   };
   if (!doc.options.allowOverlap)
     for (const pass of doc.passes)
       for (const p of pass.pieces) {
-        if (!ignored.has(p.uid)) register(p);
+        if (!ignored.has(p.uid)) register(occupied, p);
       }
-  for (const p of candidates) {
-    if (!getPiece(p.pieceId) || !Number.isInteger(p.x) || !Number.isInteger(p.y)) return false;
-    const b = bounds(p);
-    if (b.x < 0 || b.y < 0 || b.x + b.width > doc.board.width || b.y + b.height > doc.board.height)
-      return false;
-    if (!doc.options.allowOverlap) {
-      const cells = occupiedCells(p);
-      const checked = new Set<PlacedPiece>();
-      for (const cell of cells)
-        for (const other of occupied.get(cell) ?? []) {
-          if (checked.has(other)) continue;
-          checked.add(other);
-          if (surfacesOverlap(p, other)) return false;
-        }
-      register(p, cells);
+  const validate = (candidates: PlacedPiece[]): boolean => {
+    const pending = new Map<string, PlacedPiece[]>();
+    for (const p of candidates) {
+      if (!getPiece(p.pieceId) || !Number.isInteger(p.x) || !Number.isInteger(p.y)) return false;
+      const b = bounds(p);
+      if (
+        b.x < 0 ||
+        b.y < 0 ||
+        b.x + b.width > doc.board.width ||
+        b.y + b.height > doc.board.height
+      )
+        return false;
+      if (!doc.options.allowOverlap) {
+        const cells = occupiedCells(p);
+        const checked = new Set<PlacedPiece>();
+        for (const cell of cells)
+          for (const other of [...(occupied.get(cell) ?? []), ...(pending.get(cell) ?? [])]) {
+            if (checked.has(other)) continue;
+            checked.add(other);
+            if (surfacesOverlap(p, other)) return false;
+          }
+        register(pending, p, cells);
+      }
     }
-  }
-  return true;
+    return true;
+  };
+  return {
+    canPlace: validate,
+    add(candidates: PlacedPiece[]) {
+      if (!doc.options.allowOverlap) for (const p of candidates) register(occupied, p);
+    }
+  };
+}
+export function canPlace(
+  doc: PressDocument,
+  candidates: PlacedPiece[],
+  ignored = new Set<string>()
+): boolean {
+  return createPlacementValidator(doc, ignored).canPlace(candidates);
 }
 export function nextRotation(p: PlacedPiece): PlacedPiece {
   const piece = getPiece(p.pieceId)!;

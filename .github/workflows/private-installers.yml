@@ -46,6 +46,14 @@ jobs:
         run: npm run desktop:build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
       - name: Generate installer checksums
         run: node scripts/installer-checksums.mjs src-tauri/target/${{ matrix.target }}/release/bundle
+      - name: Verify custom Windows icons
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem src-tauri/target/${{ matrix.target }}/release/bundle/nsis -Filter *.exe -File | Select-Object -First 1
+          if (!$installer) { throw 'NSIS installer is missing.' }
+          pwsh -NoProfile -File tests/native/installer-branding.ps1 -Application src-tauri/target/${{ matrix.target }}/release/brickpress.exe -Installer $installer.FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
           name: Brickpress-${{ matrix.target }}

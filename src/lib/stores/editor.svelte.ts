@@ -1,5 +1,11 @@
 import { getPiece, isPhysical } from '../catalog/catalog';
-import { bounds, canPlace, nextRotation, symmetryPlacements } from '../geometry/geometry';
+import {
+  bounds,
+  canPlace,
+  createPlacementValidator,
+  nextRotation,
+  symmetryPlacements
+} from '../geometry/geometry';
 import { History } from '../history/history';
 import {
   createDocument,
@@ -136,6 +142,14 @@ export class Editor {
   zoomCommand = $state.raw<{ value: number | 'fit'; token: number }>({ value: 'fit', token: 0 });
   zoomPercent = $state(100);
   private history = new History<PressDocument>();
+  private placementStroke: {
+    before: PressDocument;
+    latest: PressDocument;
+    dirty: boolean;
+    visited: Set<string>;
+    validator: ReturnType<typeof createPlacementValidator>;
+    count: number;
+  } | null = null;
   private clipboard: ClipboardPiece[] = [];
   private toastTimer?: ReturnType<typeof setTimeout>;
   get activePass() {
@@ -387,6 +401,7 @@ export class Editor {
     this.toastTimer = setTimeout(() => (this.toast = ''), 3200);
   }
   commit(change: (draft: PressDocument) => void) {
+    this.finishPlacementStroke();
     const draft = structuredClone(this.doc);
     change(draft);
     if (JSON.stringify(draft) === JSON.stringify(this.doc)) return;
@@ -458,28 +473,110 @@ export class Editor {
       this.doc
     );
   }
-  place(x: number, y: number, pieceId = this.activePieceId) {
-    if (this.activePresetId) {
-      this.placePreset(x, y);
-      return;
-    }
+  private placementCandidates(
+    x: number,
+    y: number,
+    pieceId: string,
+    quiet = false,
+    count = this.allPieces.length
+  ) {
+    const reject = (message: string) => {
+      if (!quiet) this.notify(message);
+      return null;
+    };
     const catalogPiece = getPiece(pieceId);
-    if (!catalogPiece || (this.doc.options.physical && !isPhysical(catalogPiece))) return;
+    if (!catalogPiece || (this.doc.options.physical && !isPhysical(catalogPiece))) return null;
     if (this.activePass.locked || !this.activePass.visible) {
-      this.notify('Choose a visible, unlocked ink pass to place pieces.');
-      return;
+      return reject('Choose a visible, unlocked ink pass to place pieces.');
     }
     const candidates = this.ghosts(x, y, pieceId).map((p) => ({
       ...p,
       uid: newId(),
       seed: newSeed()
     }));
+    if (count + candidates.length > 10_000) {
+      const message = 'Placement would exceed the project limit of 10,000 pieces.';
+      if (this.toast !== message) this.notify(message);
+      return null;
+    }
+    return candidates;
+  }
+  place(x: number, y: number, pieceId = this.activePieceId) {
+    this.finishPlacementStroke();
+    if (this.activePresetId) {
+      this.placePreset(x, y);
+      return;
+    }
+    const candidates = this.placementCandidates(x, y, pieceId);
+    if (!candidates) return;
     if (!canPlace(this.doc, candidates)) {
       this.notify('That placement overlaps a piece or leaves the artboard.');
       return;
     }
     const passId = this.activePass.id;
     this.commit((doc) => doc.passes.find((p) => p.id === passId)!.pieces.push(...candidates));
+  }
+  beginPlacementStroke() {
+    this.finishPlacementStroke();
+    if (this.activePresetId || this.mode !== 'design' || this.tool !== 'place') return false;
+    this.placementStroke = {
+      before: this.doc,
+      latest: this.doc,
+      dirty: this.dirty,
+      visited: new Set(),
+      validator: createPlacementValidator(this.doc),
+      count: this.allPieces.length
+    };
+    return true;
+  }
+  get placementStrokeActive() {
+    return this.placementStroke !== null;
+  }
+  paintPlacement(x: number, y: number) {
+    const stroke = this.placementStroke;
+    if (
+      !stroke ||
+      this.doc !== stroke.latest ||
+      this.tool !== 'place' ||
+      this.mode !== 'design' ||
+      this.activePresetId
+    )
+      return false;
+    const key = `${x},${y}`;
+    if (stroke.visited.has(key)) return false;
+    stroke.visited.add(key);
+    const quiet = stroke.visited.size > 1;
+    const candidates = this.placementCandidates(x, y, this.activePieceId, quiet, stroke.count);
+    if (!candidates) return false;
+    if (!stroke.validator.canPlace(candidates)) {
+      if (!quiet) this.notify('That placement overlaps a piece or leaves the artboard.');
+      return false;
+    }
+    stroke.validator.add(candidates);
+    const passId = this.activePass.id;
+    this.doc = {
+      ...this.doc,
+      passes: this.doc.passes.map((pass) =>
+        pass.id === passId ? { ...pass, pieces: [...pass.pieces, ...candidates] } : pass
+      )
+    };
+    stroke.latest = this.doc;
+    stroke.count += candidates.length;
+    this.dirty = true;
+    return true;
+  }
+  finishPlacementStroke(cancelled = false) {
+    const stroke = this.placementStroke;
+    this.placementStroke = null;
+    if (!stroke || stroke.before === stroke.latest || this.doc !== stroke.latest) return;
+    if (cancelled) {
+      this.doc = stroke.before;
+      this.dirty = stroke.dirty;
+      this.pruneSelection();
+    } else {
+      this.history.push(stroke.before);
+      this.historyVersion++;
+    }
   }
   transformSelected(transform: (piece: PlacedPiece) => PlacedPiece) {
     const candidates = this.selectedPieces.map(({ piece }) => transform(piece));
@@ -725,6 +822,7 @@ export class Editor {
     this.selected = [];
   }
   newDocument() {
+    this.finishPlacementStroke(true);
     this.removeTrace();
     this.activePresetId = null;
     this.doc = createDocument();
@@ -738,6 +836,7 @@ export class Editor {
   }
   load(text: string, recovered = false) {
     const doc = parseDocument(text);
+    this.finishPlacementStroke(true);
     this.removeTrace();
     this.activePresetId = null;
     this.doc = doc;
@@ -757,6 +856,7 @@ export class Editor {
     return serializeDocument(this.doc);
   }
   undo() {
+    this.finishPlacementStroke();
     const previous = this.history.undo(this.doc);
     if (previous) {
       this.doc = previous;
@@ -766,6 +866,7 @@ export class Editor {
     }
   }
   redo() {
+    this.finishPlacementStroke();
     const next = this.history.redo(this.doc);
     if (next) {
       this.doc = next;
@@ -787,6 +888,7 @@ export class Editor {
     this.zoomCommand = { value, token: this.zoomCommand.token + 1 };
   }
   destroy() {
+    this.finishPlacementStroke(true);
     clearTimeout(this.toastTimer);
     this.removeTrace();
   }

@@ -73,6 +73,33 @@ allowance without charges.
 Updates are manual: download and install the next private build. There is no
 updater service, verified publisher signing, notarization, public release, or auto-publication.
 
+## Application and installer artwork
+
+`assets/branding/brickpress.png` preserves the supplied transparent artwork.
+The generated icon set is used for the Windows executable and shortcuts, macOS
+application, and Linux desktop packages. The same artwork appears in the browser
+favicon, Windows setup/uninstaller icons and setup artwork, and the macOS DMG
+background. Windows installer artwork uses native 24-bit BMP assets at the
+recommended header and sidebar dimensions.
+
+Regenerate these committed assets on Windows, after `npm ci`, with:
+
+```powershell
+pwsh -NoProfile -File scripts/generate-branding.ps1
+```
+
+The script uses the pinned Tauri CLI for icon conversion and Windows drawing
+APIs for installer layouts. Other platforms consume the generated files without
+needing PowerShell or another image-processing dependency.
+
+The Windows packaging job verifies all icon resources in the application and
+NSIS installer against the custom ICO, reading the executables directly without
+Explorer's cached preview. To run that check locally after building:
+
+```powershell
+pwsh -NoProfile -File tests/native/installer-branding.ps1
+```
+
 ## Documents and storage
 
 Desktop Open/Save/Save As use native file dialogs. Save overwrites the active

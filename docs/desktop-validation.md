@@ -9,10 +9,10 @@ version-1 documents, ink colors, dimensions, and paper presets are preserved.
 | Check                           | Result                                                                               |
 | ------------------------------- | ------------------------------------------------------------------------------------ |
 | Svelte / TypeScript analysis    | 0 errors, 0 warnings                                                                 |
-| Unit tests                      | 69 passed                                                                            |
+| Unit tests                      | 80 passed                                                                            |
 | Catalog validation              | All 41 pieces valid                                                                  |
 | Browser production build        | Passed, static `build/` output                                                       |
-| Browser Playwright scenarios    | All 27 passed against production preview                                             |
+| Browser Playwright scenarios    | All 31 passed against production preview                                             |
 | Windows native scenarios        | All 16 passed, including application Quit protection and the real-dialog check       |
 | Windows native clean close      | Passed; process exits normally after flushing version-1 recovery in isolated storage |
 | Rust tests                      | All 8 passed                                                                         |
@@ -30,6 +30,16 @@ Svelte analysis, all 69 unit tests, the production build, and formatting checks
 passed again. Native smoke and installer behavior results above are from the
 preceding Tauri integration; native selectors have been updated for these UI
 changes, but the native suite has not been rerun for this update.
+
+The branding update uses the supplied transparent artwork without changing the
+source bytes. The production frontend and Windows NSIS installer built again.
+The generated ICO contains 16, 24, 32, 48, 64, and 256 px layers; the ICNS
+container and merged Windows/macOS/Linux configurations passed local checks.
+Icons extracted from the built Windows application and installer show the new
+artwork. The generated NSIS script references the new header/sidebar bitmaps
+and setup/uninstaller icons. The favicon is present in the production frontend.
+The branded installer pages have not been checked in a running installer, and
+the macOS DMG background still requires a macOS packaging/installation check.
 
 The native embedded-driver scenarios check Unicode saves, overwriting the active
 file, Save As, cancellation, invalid projects, external changes, recovery, New
@@ -54,16 +64,37 @@ select controls through Playwright.
 
 `src-tauri/target/release/bundle/nsis/Brickpress_1.0.0_x64-setup.exe`
 
-Size: 3,118,548 bytes. SHA-256:
+Size: 3,387,715 bytes. SHA-256:
 
 ```text
-bea5466de8544e1bff1ec08120a058d731a9a76fde4a20cf469b7570aae0c2d5
+33ff8cfc2249e9050eefcc77239ace97b8e32fe2fe61b3643351c4bc79d6a530
 ```
 
 This is an unsigned test build. It contains JavaScript and Rust dependency
 notices as resources; the editor also provides a readable notices dialog.
-The isolated installation used `artifacts/installed/Brickpress` and was removed
-by its uninstaller after testing. User projects and application data are kept.
+The preceding installer smoke check used `artifacts/installed/Brickpress` and
+removed it using its uninstaller. The newly branded installer has been built
+and inspected but has not been installed. User projects and application data
+are kept by the uninstaller.
+
+The drag-to-fill update rebuilt the Windows application and installer. All
+Windows icon groups in both executables match the supplied artwork pixel for
+pixel when loaded directly from their PE resources, bypassing Explorer's cached
+preview. Both the setup and uninstaller explicitly use the custom ICO and
+header bitmap. A copy at
+`artifacts/installers/Brickpress_1.0.0_x64-setup-branded.exe` has a fresh filename
+for downloading; its checksum is in the same directory.
+
+The 80 unit tests include continuous-grid traversal, clipped paths outside the
+paper, failed placement groups, immediate piece display, collision/footprint
+rules, symmetry, locks, physical compatibility, the 10,000-piece limit, stroke
+cancellation, redo preservation, and one undo transaction per stroke. Four new
+browser scenarios exercise sparse and diagonal pointer movement, retracing with
+overlap enabled, rotated pieces around obstacles, paper edges, Print Preview,
+Escape, actual capture release, and pointer cancellation. The placement cursor
+continues to support arrows and Enter for keyboard placement. All 31 browser
+scenarios passed against the rebuilt production frontend, including the
+accessibility, enlarged-text, export, preset, tracing and 2,000-piece scenarios.
 
 ## Outstanding platform checks
 
