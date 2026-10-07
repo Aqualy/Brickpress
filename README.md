@@ -35,6 +35,8 @@ The production build is a static site in `build/`. Serve it with an ordinary sta
 
 See [desktop development, installation, and testing](docs/desktop.md). The browser edition and desktop edition share the editor and version-1 projects; each has separate local storage.
 
+[macOS and Linux 1.0.1 test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1) include Apple Silicon/Intel DMGs and Linux x64 AppImage/Debian packages, with SHA-256 checksums. The preceding [Windows test installer](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.0) remains available separately. See [validation results and remaining manual checks](docs/desktop-validation.md).
+
 ```sh
 npm ci
 cargo install cargo-about --version 0.9.2 --locked --features cli
@@ -98,12 +100,12 @@ npm run test:e2e
 
 Brickpress is independent software. LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse Brickpress. Product references identify compatible geometry; they do not grant trademark, design or copyright rights. See [NOTICE.md](NOTICE.md) for attribution and release considerations.
 
-The original Brickpress code and catalog are licensed under the [Anti-Capitalist Software License v1.4](LICENSE), copyright 2026 Tiebo (Aqualy). ACSL restricts permitted users and organizations and is not an open-source license under the usual definition; see [its authors' explanation](https://anticapitalist.software/). The repository remains private for testing.
+The original Brickpress code and catalog are licensed under the [Anti-Capitalist Software License v1.4](LICENSE), copyright 2026 Tiebo (Aqualy). ACSL restricts permitted users and organizations and is not an open-source license under the usual definition; see [its authors' explanation](https://anticapitalist.software/). Test installers are distributed as GitHub prereleases.
 
 The catalog is original work created by Tiebo (Aqualy), as recorded in `NOTICE.md`; its historical kit name does not imply LEGO Group authorship. Third-party code, fonts, icons and the vendored test driver retain their own licenses. `npm run notices` includes the project license and collects dependency notices for distributed builds; ACSL does not replace those third-party licenses.
 
 ## Reference UI boundaries
 
-The editor follows the supplied Figma-style interface without simulated window chrome. Existing project artwork, ink colors, paper presets, dimensions, and export rendering remain compatible. A5/A-series page sizing, ink-pass drag-reordering, and browser fullscreen are deferred: current size presets, pass reorder commands, and Fit remain available.
+The editor follows the supplied Figma-style interface without simulated window chrome. Existing project artwork, ink colors, paper presets, dimensions, and export rendering remain compatible. A5/A-series page sizing and browser fullscreen are deferred: current size presets and Fit remain available. Ink passes support drag reordering and keyboard reorder commands.
 
 Accessibility targets WCAG 2.2 AA with keyboard editing, Bits UI popovers and modal drawers, focus restoration, labels, contrast, and non-color state indicators. Browser tests run axe scans across both modes, all inspector tabs, menus, and narrow drawers; manual visual and keyboard checks supplement those scans.
