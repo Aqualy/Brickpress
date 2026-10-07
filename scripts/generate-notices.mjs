@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 // tools and peer dependencies are deliberately outside this distribution list.
 const roots = [
   '@tauri-apps/api',
+  '@jsquash/avif',
   '@fontsource/inter',
   '@fontsource/ibm-plex-mono',
   '@lucide/svelte',
@@ -67,12 +68,21 @@ const sections = [...packages.values()]
   );
 const uiLicense = readFileSync(join(project, 'licenses', 'shadcn-svelte.txt'), 'utf8').trim();
 const projectLicense = readFileSync(join(project, 'LICENSE'), 'utf8').trim();
+const codecNotices = [
+  ['libavif 1.0.1', 'libavif.txt'],
+  ['libaom 3.7.0', 'libaom.txt'],
+  ['libaom patent grant', 'libaom-patents.txt']
+].map(
+  ([name, file]) =>
+    `${name} (bundled AVIF decoder)\n${'-'.repeat(72)}\n${readFileSync(join(project, 'licenses', file), 'utf8').trim()}`
+);
 const output = [
   'Brickpress third-party notices',
   'Generated from the installed versions pinned in package-lock.json. Keep these notices with distributed builds.',
   'The following project license covers original Brickpress code and catalog assets only. Dependency licenses below remain unchanged. See NOTICE.md for provenance.',
   `Brickpress project license\n${'-'.repeat(72)}\n${projectLicense}`,
   `shadcn-svelte UI foundation\n${'-'.repeat(72)}\n${uiLicense}`,
+  ...codecNotices,
   ...sections
 ].join('\n\n');
 mkdirSync(join(project, 'static'), { recursive: true });

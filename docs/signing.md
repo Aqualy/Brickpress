@@ -18,17 +18,17 @@ and Linux packages. No publisher account or certificate has been purchased.
 - **Linux:** distribute AppImage and Debian packages directly. Paid certificates
   are not required for these downloads.
 
-The private installer workflow places `SHA256SUMS.txt` beside each platform's
+The test installer workflow places `SHA256SUMS.txt` beside each platform's
 packages. On macOS/Linux, run `shasum -a 256 -c SHA256SUMS.txt` from the extracted
 artifact directory. On Windows, use `Get-FileHash -Algorithm SHA256` for the
 installer and compare the result with the manifest. These checks detect changed
 bytes; an unsigned checksum does not establish a verified publisher identity.
 
-Keep GitHub Actions paid usage disabled (a $0 spending limit). Standard hosted
-runners in a private repository consume the account's included allowance; they
-are not unlimited free builds. Stop or postpone builds if the allowance is
-exhausted. No release is published automatically, and the repository remains
-private until public distribution is explicitly requested.
+The repository is public, where standard hosted runners are free. If it becomes
+private, keep GitHub Actions paid usage disabled (a $0 spending limit): private
+repositories consume the account's included allowance. Stop or postpone builds
+if that allowance is exhausted. Releases are published manually after validation.
+See [GitHub's runner pricing rules](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
 There is a possible free Windows Store route: add **MSIX** packaging, enroll in
 the Store's free developer program, and pass certification. Microsoft signs

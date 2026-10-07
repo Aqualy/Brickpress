@@ -6,7 +6,11 @@ Print controls appear only in **Print Preview**. Give the current press settings
 
 **Compatible printing heights only** in Grid settings restricts placement to shapes with standard printing heights. It does not alter the rendered impression.
 
-A local studio for modular tile compositions and simulated letterpress impressions, available in the browser and as a Tauri 2 desktop application. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas is used only to rasterize PNG exports. No accounts or remote backend.
+A local studio for modular tile compositions and simulated letterpress impressions, available in the browser and as a Tauri 2 desktop application. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas rasterizes PNG exports and normalizes fallback tracing images. No accounts or remote backend.
+
+AVIF tracing images use a bundled decoder when the webview lacks a native codec.
+The fallback keeps the original filename and stores a lossless PNG guide for recovery;
+the existing 20 MB and 40 megapixel limits still apply. Images stay on your device.
 
 ## Run
 

@@ -460,6 +460,12 @@ describe('Brickpress native webview', () => {
         { timeoutMsg: `Tracing import did not persist ${name}` }
       );
       assert.equal(await countSelector('[data-editor-guide="tracing"]'), 1);
+      await browser.waitUntil(async () =>
+        browser.execute(() => {
+          const img = document.querySelector<HTMLImageElement>('.trace-summary img');
+          return !!img && img.complete && img.naturalWidth > 0;
+        })
+      );
       await browser.keys('Escape');
     }
     await browser.execute(() => {
@@ -475,6 +481,52 @@ describe('Brickpress native webview', () => {
       const metadata = await invoke<string | null>('read_state', { key: 'trace-metadata' });
       return metadata !== null && JSON.parse(metadata).name === 'fallback.png';
     });
+    await browser.keys('Escape');
+    await browser.execute(() => {
+      const NativeImage = window.Image;
+      const create = URL.createObjectURL.bind(URL);
+      const avifUrls = new Set<string>();
+      URL.createObjectURL = (blob) => {
+        const url = create(blob);
+        if (blob instanceof Blob && blob.type === 'image/avif') avifUrls.add(url);
+        return url;
+      };
+      window.Image = new Proxy(NativeImage, {
+        construct(target, args) {
+          const image = Reflect.construct(target, args) as HTMLImageElement;
+          const src = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src')!;
+          Object.defineProperty(image, 'src', {
+            set(value: string) {
+              if (avifUrls.has(value))
+                queueMicrotask(() => image.dispatchEvent(new Event('error')));
+              else src.set!.call(image, value);
+            },
+            get() {
+              return src.get!.call(image);
+            }
+          });
+          return image;
+        }
+      });
+    });
+    const avif = resolve(directory, 'fallback.avif');
+    await writeFile(avif, await readFile(resolve('tests/native/fixtures/guide.avif')));
+    await invoke('test_queue_file', { path: avif });
+    await $('[aria-label="Grid settings"]').click();
+    await button('Replace image').then((element) => element.click());
+    await dialogsHandled();
+    await browser.waitUntil(async () => {
+      const metadata = await invoke<string | null>('read_state', { key: 'trace-metadata' });
+      return metadata !== null && JSON.parse(metadata).name === 'fallback.avif';
+    });
+    await reload();
+    await $('[aria-label="Grid settings"]').click();
+    await browser.waitUntil(async () =>
+      browser.execute(() => {
+        const img = document.querySelector<HTMLImageElement>('.trace-summary img');
+        return !!img && img.complete && img.naturalWidth > 0;
+      })
+    );
     await browser.keys('Escape');
   });
 

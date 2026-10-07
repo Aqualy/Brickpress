@@ -69,6 +69,7 @@
     "serialize-javascript": "7.1.2"
   },
   "dependencies": {
+    "@jsquash/avif": "2.1.1",
     "@tauri-apps/api": "2.12.1"
   }
 }

@@ -14,38 +14,51 @@ export interface TraceImage {
 export type TraceOverlay = TraceImage & { url: string };
 
 const formats = /^image\/(png|jpeg|webp|gif|avif|bmp)$/;
+async function nativeDimensions(file: File): Promise<{ width: number; height: number }> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const dimensions = { width: bitmap.width, height: bitmap.height };
+      bitmap.close();
+      return dimensions;
+    } catch {
+      // Some webviews expose createImageBitmap but support fewer codecs through it.
+    }
+  }
+  const image = new Image(),
+    url = URL.createObjectURL(file);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error('This image could not be decoded. Try PNG or JPEG.'));
+      image.src = url;
+    });
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export async function readTraceFile(file: File) {
   if (!formats.test(file.type))
     throw new Error('Choose a PNG, JPEG, WebP, GIF, AVIF or BMP image.');
   if (file.size > 20_000_000) throw new Error('Tracing images must be smaller than 20 MB.');
-  let width: number, height: number;
-  if (typeof createImageBitmap === 'function') {
-    const bitmap = await createImageBitmap(file).catch(() => {
-      throw new Error('This image could not be decoded. Try PNG or JPEG.');
-    });
-    width = bitmap.width;
-    height = bitmap.height;
-    bitmap.close();
-  } else {
-    const image = new Image(),
-      url = URL.createObjectURL(file);
-    try {
-      await new Promise<void>((resolve, reject) => {
-        image.onload = () => resolve();
-        image.onerror = () =>
-          reject(new Error('This image could not be decoded. Try PNG or JPEG.'));
-        image.src = url;
-      });
-      width = image.naturalWidth;
-      height = image.naturalHeight;
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+  let dimensions: { width: number; height: number };
+  let asset: Blob = file;
+  try {
+    dimensions = await nativeDimensions(file);
+  } catch (error) {
+    if (file.type !== 'image/avif') throw error;
+    const { decodeAvifGuide } = await import('./avif');
+    const converted = await decodeAvifGuide(file);
+    dimensions = converted;
+    asset = converted.asset;
   }
+  const { width, height } = dimensions;
   if (!width || !height || width * height > 40_000_000)
     throw new Error('Use an image up to 40 megapixels.');
   return {
-    asset: file as Blob,
+    asset,
     name: file.name.slice(0, 160),
     imageWidth: width,
     imageHeight: height

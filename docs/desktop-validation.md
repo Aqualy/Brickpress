@@ -6,21 +6,21 @@ version-1 documents, ink colors, dimensions, and paper presets are preserved.
 
 ## Completed checks
 
-| Check                           | Result                                                                                |
-| ------------------------------- | ------------------------------------------------------------------------------------- |
-| Svelte / TypeScript analysis    | 0 errors, 0 warnings                                                                  |
-| Unit tests                      | 86 passed                                                                             |
-| Catalog validation              | All 41 pieces valid                                                                   |
-| Browser production build        | Passed, static `build/` output                                                        |
-| Browser Playwright scenarios    | All 35 passed against the fixed-layout production build                               |
-| Windows native scenarios        | Preceding UI build: 18 passed, including Quit protection and real-dialog cancellation |
-| Windows native clean close      | Passed; process exits normally after flushing version-1 recovery in isolated storage  |
-| Rust tests                      | All 8 passed                                                                          |
-| Rust formatting                 | Passed                                                                                |
-| Clippy                          | Passed with warnings denied, production and `desktop-e2e` features                    |
-| Windows production build        | Passed, x64 NSIS installer generated                                                  |
-| Windows installer smoke         | Install, bundled notices, launch, single instance, clean close, and uninstall passed  |
-| npm production dependency audit | 0 reported vulnerabilities (`npm audit --omit=dev`)                                   |
+| Check                           | Result                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| Svelte / TypeScript analysis    | 0 errors, 0 warnings                                                                        |
+| Unit tests                      | 86 passed                                                                                   |
+| Catalog validation              | All 41 pieces valid                                                                         |
+| Browser production build        | Passed, static `build/` output                                                              |
+| Browser Playwright scenarios    | All 35 passed against the fixed-layout production build                                     |
+| Windows native scenarios        | Fixed-layout 1.0.1 build: 18 passed, including Quit protection and real-dialog cancellation |
+| Windows native clean close      | Passed; process exits normally after flushing version-1 recovery in isolated storage        |
+| Rust tests                      | All 8 passed                                                                                |
+| Rust formatting                 | Passed                                                                                      |
+| Clippy                          | Passed with warnings denied, production and `desktop-e2e` features                          |
+| Windows production build        | Passed, x64 NSIS installer generated                                                        |
+| Windows installer smoke         | Install, bundled notices, launch, single instance, clean close, and uninstall passed        |
+| npm production dependency audit | 0 reported vulnerabilities (`npm audit --omit=dev`)                                         |
 
 The latest UI update adds export previews, Print-Preview-only press controls,
 custom print presets, and drag and keyboard ink-pass ordering. The toolbar,
