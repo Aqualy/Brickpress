@@ -3,15 +3,95 @@
   import { Editor } from '$lib/stores/editor.svelte';
   import { AUTOSAVE_KEY } from '$lib/persistence/document';
   import { PRESETS_KEY } from '$lib/persistence/presets';
-  import { loadTrace, saveTrace } from '$lib/persistence/tracing';
-  import { downloadBlob, filename } from '$lib/export/export';
+  import { createPlatform } from '$lib/platform';
+  import { DocumentController } from '$lib/platform/document-controller';
+  import { platformError, type PlatformAdapter, type StateKey } from '$lib/platform/types';
   import Toolbar from '$lib/components/editor/Toolbar.svelte';
   import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import '../app.css';
   const editor = new Editor();
   let ready = $state(false);
+  let startupError = $state('');
+  let platform: PlatformAdapter | undefined;
+  let controller: DocumentController | undefined;
+  let disposed = false;
+  let unlistenClose: (() => void) | undefined;
   let fileInput: HTMLInputElement;
+  function measureFooter(element: HTMLElement) {
+    const update = () =>
+      document.documentElement.style.setProperty(
+        '--footer-height',
+        `${element.getBoundingClientRect().height}px`
+      );
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    update();
+    return () => observer.disconnect();
+  }
+  async function recoverRecord(key: StateKey, consume: (text: string) => void) {
+    if (!platform) return;
+    let text: string | null;
+    try {
+      text = await platform.readState(key);
+    } catch (error) {
+      if (platform.desktop) throw error;
+      editor.notify(platformError(error).message);
+      return;
+    }
+    if (text === null) return;
+    try {
+      consume(text);
+    } catch (error) {
+      if (platform.desktop) await platform.quarantineState(key);
+      editor.notify(`Saved ${key} could not be recovered: ${platformError(error).message}`);
+    }
+  }
+  async function initialize() {
+    startupError = '';
+    try {
+      platform ??= await createPlatform();
+      editor.setPlatform(platform);
+      controller ??= new DocumentController(editor, platform, flushStorage);
+      await recoverRecord('recovery', (text) => controller!.recover(text));
+      await recoverRecord('presets', (text) => editor.restorePresets(text));
+      await recoverRecord('preferences', (text) => {
+        if (platform!.desktop) {
+          const preferences = JSON.parse(text);
+          if (!preferences || !['flat', 'embossed'].includes(preferences.gridAppearance))
+            throw new Error('The appearance preference is invalid.');
+          editor.gridAppearance = preferences.gridAppearance;
+        } else editor.gridAppearance = text === 'embossed' ? 'embossed' : 'flat';
+      });
+      try {
+        const trace = await platform.loadTrace();
+        if (!disposed) editor.restoreTrace(trace);
+      } catch (error) {
+        if (platform.desktop) {
+          await platform.quarantineState('trace-metadata');
+          editor.notify(`Tracing guide could not be recovered: ${platformError(error).message}`);
+        }
+      }
+      if (platform.desktop && import.meta.env.VITE_DESKTOP_E2E === '1')
+        await import('@wdio/tauri-plugin');
+      if (!disposed) {
+        if (platform.desktop && !unlistenClose) {
+          const stop = await platform.onCloseRequested(async () => {
+            await controller?.close();
+          });
+          if (disposed) {
+            stop();
+            return;
+          }
+          unlistenClose = stop;
+        }
+        await platform.setDocumentTitle(editor.doc.name, editor.dirty);
+        ready = true;
+      }
+    } catch (error) {
+      startupError = `Storage could not be loaded: ${platformError(error).message}`;
+    }
+  }
   onMount(() => {
     const media = window.matchMedia('(max-width: 999px)');
     const updateLayout = () => {
@@ -20,33 +100,6 @@
     };
     updateLayout();
     media.addEventListener('change', updateLayout);
-    try {
-      editor.gridAppearance =
-        localStorage.getItem('form-impression-grid-appearance') === 'embossed'
-          ? 'embossed'
-          : 'flat';
-    } catch {
-      /* Optional presentation preference. */
-    }
-    try {
-      const saved = localStorage.getItem(AUTOSAVE_KEY);
-      if (saved) editor.load(saved, true);
-    } catch (e) {
-      editor.notify(
-        e instanceof Error
-          ? `Autosave could not be recovered: ${e.message}`
-          : 'Autosave is unavailable.'
-      );
-    }
-    try {
-      editor.restorePresets(localStorage.getItem(PRESETS_KEY) ?? '[]');
-    } catch (e) {
-      editor.notify(
-        e instanceof Error
-          ? `Preset library could not be recovered: ${e.message}`
-          : 'Preset storage is unavailable.'
-      );
-    }
     const synchronizePresets = (event: StorageEvent) => {
       if (event.key === PRESETS_KEY) {
         try {
@@ -57,21 +110,12 @@
       }
     };
     window.addEventListener('storage', synchronizePresets);
-    let disposed = false;
-    void loadTrace()
-      .then((trace) => {
-        if (!disposed) editor.restoreTrace(trace);
-      })
-      .catch(() => {
-        /* Guides are optional; uploading an image can retry storage. */
-      })
-      .finally(() => {
-        if (!disposed) ready = true;
-      });
+    void initialize();
     return () => {
       disposed = true;
       window.removeEventListener('storage', synchronizePresets);
       media.removeEventListener('change', updateLayout);
+      unlistenClose?.();
       editor.destroy();
     };
   });
@@ -79,45 +123,65 @@
     if (!ready) return;
     const trace = editor.trace;
     const timer = setTimeout(() => {
-      void saveTrace(trace).catch((e) => {
-        if (trace)
-          editor.notify(e instanceof Error ? e.message : 'Tracing storage is unavailable.');
+      if (controller?.closing) return;
+      void platform?.saveTrace(trace).catch((e) => {
+        if (trace || platform?.desktop) editor.notify(platformError(e).message);
       });
     }, 300);
     return () => clearTimeout(timer);
   });
   $effect(() => {
     if (!ready) return;
-    try {
-      localStorage.setItem('form-impression-grid-appearance', editor.gridAppearance);
-    } catch {
-      /* The document can still be saved. */
-    }
+    const preference = platform?.desktop
+      ? JSON.stringify({ gridAppearance: editor.gridAppearance })
+      : editor.gridAppearance;
+    void platform
+      ?.writeState('preferences', preference)
+      .catch((error) => editor.notify(platformError(error).message));
   });
   $effect(() => {
     if (!ready) return;
     const doc = editor.doc;
+    controller?.documentChanged();
+    void platform
+      ?.setDocumentTitle(doc.name, editor.dirty)
+      .catch((error) => editor.notify(platformError(error).message));
     editor.autosaveStatus = 'Saving…';
     const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(doc));
-        editor.autosaveStatus = 'Saved on this device';
-      } catch {
-        editor.autosaveStatus = 'Autosave unavailable';
-        editor.notify('Device storage is full or disabled. Save a project file to keep your work.');
-      }
+      if (controller?.closing) return;
+      void platform
+        ?.writeState('recovery', JSON.stringify(doc))
+        .then(() => {
+          editor.autosaveStatus = 'Saved on this device';
+        })
+        .catch(() => {
+          editor.autosaveStatus = 'Autosave unavailable';
+          editor.notify(
+            'Device storage is full or disabled. Save a project file to keep your work.'
+          );
+        });
     }, 350);
     return () => clearTimeout(timer);
   });
-  function save() {
-    downloadBlob(
-      new Blob([editor.projectText()], { type: 'application/json' }),
-      `${filename(editor.doc.name)}.brickpress.json`
+  function save(as = false) {
+    void controller?.save(as);
+  }
+  async function flushStorage(includeRecovery: boolean) {
+    if (!platform) return;
+    await editor.flushAssets();
+    await editor.flushPresets();
+    await platform.writeState('presets', JSON.stringify(editor.presets));
+    await platform.saveTrace(editor.trace);
+    await platform.writeState(
+      'preferences',
+      platform.desktop
+        ? JSON.stringify({ gridAppearance: editor.gridAppearance })
+        : editor.gridAppearance
     );
-    editor.saved();
+    if (includeRecovery) await platform.writeState('recovery', editor.projectText());
   }
   function flushAutosave() {
-    if (!ready) return;
+    if (!ready || platform?.desktop) return;
     try {
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(editor.doc));
     } catch {
@@ -125,34 +189,23 @@
     }
   }
   function open() {
-    fileInput.click();
+    if (platform?.desktop) void controller?.open();
+    else fileInput.click();
   }
   async function load(event: Event) {
     const input = event.target as HTMLInputElement,
       file = input.files?.[0];
     if (!file) return;
-    if (
-      editor.dirty &&
-      !window.confirm(
-        'Open this project and replace the current composition? Save first if you want to keep it.'
-      )
-    ) {
-      input.value = '';
-      return;
-    }
-    try {
-      if (file.size > 20_000_000) throw new Error('Project files must be smaller than 20 MB.');
-      editor.load(await file.text());
-    } catch (e) {
-      editor.notify(e instanceof Error ? e.message : 'The project could not be opened.');
-    }
+    await controller?.openBrowserFile(file);
     input.value = '';
   }
   function keyboard(event: KeyboardEvent) {
     if (
+      !ready ||
+      editor.transitioning ||
       editor.drawer !== null ||
       document.querySelector(
-        '[data-popover-content][data-state="open"], [data-tooltip-content][data-state="open"]'
+        '[data-popover-content][data-state="open"], [data-tooltip-content][data-state="open"], [data-dialog-content][data-state="open"]'
       ) ||
       ['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement)?.tagName) ||
       (event.target as HTMLElement)?.isContentEditable
@@ -162,7 +215,7 @@
       key = event.key.toLowerCase();
     if (mod && key === 's') {
       event.preventDefault();
-      save();
+      save(event.shiftKey);
       return;
     }
     if (mod && key === 'o') {
@@ -250,26 +303,71 @@
   aria-label="Open project file"
   onchange={load}
 />
-<div class="editor-app" inert={!ready} aria-busy={!ready} data-ready={ready}>
+<div
+  class="editor-app"
+  inert={!ready || editor.transitioning}
+  aria-busy={!ready || editor.transitioning}
+  data-ready={ready}
+>
   <Toolbar
     {editor}
-    onnew={() => editor.newDocument()}
+    onnew={() => {
+      void controller?.newDocument();
+    }}
     onopen={open}
-    onsave={save}
-    onexport={() => editor.openExport()}
+    onsave={() => save()}
+    onsaveas={() => save(true)}
   />
   <EditorLayout {editor} />
-  <footer class="app-footer">
-    <span class="footer-document">{editor.doc.name}{editor.dirty ? ' •' : ''}</span><span
-      class="footer-shortcuts"
+  <footer class="app-footer" {@attach measureFooter}>
+    <span class="footer-document" title={editor.activeFilePath ?? undefined}
+      >{editor.doc.name}{editor.dirty ? ' •' : ''}</span
+    ><span class="footer-shortcuts"
       ><kbd>Space</kbd> pan <i>·</i> <kbd>R</kbd> rotate <i>·</i> <kbd>⇧</kbd> multi-select</span
-    ><span
-      >{editor.allPieces.length} pieces<span class="footer-dot">·</span>{editor.selected.length} selected<span
-        class="footer-dot">·</span
-      ><span class="local-save">{editor.autosaveStatus}</span></span
+    ><span class="footer-statistics"
+      ><span>{editor.allPieces.length} pieces</span><span class="footer-dot">·</span><span
+        >{editor.selected.length} selected</span
+      ><span class="footer-dot">·</span><span class="local-save">{editor.autosaveStatus}</span
+      ></span
     >
   </footer>
 </div>
+{#if startupError}
+  <div class="startup-error" role="alert">
+    <p>{startupError}</p>
+    <button
+      onclick={() => {
+        void initialize();
+      }}>Retry loading storage</button
+    >
+  </div>
+{/if}
 {#if editor.toast}<div class="toast" role="status">
     <Icon name="info" size={16} />{editor.toast}
   </div>{/if}
+
+<style>
+  .startup-error {
+    position: fixed;
+    inset: auto 12px 12px;
+    z-index: 90;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    color: #172033;
+    border: 1px solid #cbd0d8;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .startup-error button {
+    min-height: 32px;
+    padding: 4px 12px;
+    border: 1px solid #cbd0d8;
+    border-radius: 4px;
+    background: #eef2f7;
+    color: #172033;
+  }
+</style>

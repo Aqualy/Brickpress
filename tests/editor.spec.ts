@@ -53,6 +53,161 @@ async function clickStud(page: Page, x: number, y: number) {
 async function count(page: Page, number: number) {
   await expect(page.locator('.artboard [data-uid]')).toHaveCount(number);
 }
+async function openExport(page: Page) {
+  const tab = page.getByRole('tab', { name: 'Export', exact: true });
+  if (!(await tab.isVisible())) {
+    await page.getByRole('button', { name: 'Open Inspector', exact: true }).click();
+  }
+  await tab.click();
+}
+
+test('marquee selection starts in the workspace and respects pass visibility and locks', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 1448, height: 1086 });
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  doc.passes[0].pieces = [
+    { uid: 'top-left', pieceId: '3070', x: 0, y: 0, rotation: 0, seed: 1 },
+    { uid: 'bottom-right', pieceId: '3070', x: 7, y: 7, rotation: 0, seed: 2 }
+  ];
+  doc.passes[1].locked = true;
+  doc.passes[1].pieces = [{ uid: 'locked', pieceId: '3070', x: 2, y: 2, rotation: 0, seed: 3 }];
+  doc.passes[2].visible = false;
+  doc.passes[2].pieces = [{ uid: 'hidden', pieceId: '3070', x: 5, y: 5, rotation: 0, seed: 4 }];
+  await start(page, doc);
+  await page.getByRole('button', { name: 'Select tool', exact: true }).click();
+  const original = await documentState(page);
+  const outline = page.locator('.artboard rect[stroke-dasharray="3 2"]');
+  const marquee = page.locator('[data-editor-guide="marquee"]');
+  const from = await studPoint(page, -0.75, -0.75);
+  const to = await studPoint(page, 8.75, 8.75);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 6 });
+  await expect(marquee).toBeVisible();
+  const rectangle = (await marquee.boundingBox())!;
+  expect(Math.abs(rectangle.x - from.x)).toBeLessThan(1.5);
+  expect(Math.abs(rectangle.y - from.y)).toBeLessThan(1.5);
+  expect(Math.abs(rectangle.width - (to.x - from.x))).toBeLessThan(1.5);
+  expect(Math.abs(rectangle.height - (to.y - from.y))).toBeLessThan(1.5);
+  await expect(page.locator('.toast')).toHaveCount(0);
+  await page.screenshot({ path: 'artifacts/workspace-selection.png' });
+  await page.mouse.up();
+  await expect(marquee).toHaveCount(0);
+  await expect(outline).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: '2 pieces selected', exact: true })).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'Selection actions' })).toHaveCount(0);
+
+  // Start beyond the bottom-right edge and drag back toward the paper.
+  const inner = await studPoint(page, 6.75, 6.75);
+  await page.mouse.move(to.x, to.y);
+  await page.mouse.down();
+  await page.mouse.move(inner.x, inner.y, { steps: 4 });
+  await page.mouse.up();
+  await expect(outline).toHaveCount(1);
+  await expect(page.getByLabel('Selection X', { exact: true })).toHaveValue('7');
+
+  // Shift adds pieces without selecting hidden or locked passes.
+  await page.keyboard.down('Shift');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  const near = await studPoint(page, 0.75, 0.75);
+  await page.mouse.move(near.x, near.y, { steps: 4 });
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+  await expect(outline).toHaveCount(2);
+  expect(await documentState(page)).toEqual(original);
+
+  // Selection actions are shown once, following the available inspector space.
+  await page.getByRole('tab', { name: 'Layers', exact: true }).click();
+  await expect(page.getByRole('toolbar', { name: 'Selection actions' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Properties', exact: true }).click();
+  await expect(page.getByRole('toolbar', { name: 'Selection actions' })).toHaveCount(0);
+  await page.locator('.canvas-workspace').focus();
+  await page.keyboard.press('Delete');
+  const remaining = await documentState(page);
+  expect(remaining.passes[0].pieces).toHaveLength(0);
+  expect(remaining.passes[1]).toEqual(original.passes[1]);
+  expect(remaining.passes[2]).toEqual(original.passes[2]);
+});
+
+test('workspace marquee follows zoom and pan, cancels cleanly and does not place outside the board', async ({
+  page
+}) => {
+  const doc = createDocument();
+  doc.board = { width: 8, height: 8 };
+  doc.passes[0].pieces = [{ uid: 'edge', pieceId: '3070', x: 0, y: 3, rotation: 0, seed: 1 }];
+  await start(page, doc);
+  const original = await documentState(page);
+  await page.locator('.zoom-value').click();
+  await page.getByRole('button', { name: 'Canvas zoom in', exact: true }).click();
+  const blank = await studPoint(page, -1, 3);
+  await page.mouse.move(blank.x, blank.y);
+  await page.mouse.down({ button: 'middle' });
+  await page.mouse.move(blank.x + 36, blank.y + 24, { steps: 4 });
+  await page.mouse.up({ button: 'middle' });
+  await page.getByRole('button', { name: 'Select tool', exact: true }).click();
+  const from = await studPoint(page, -0.75, 2.5);
+  const to = await studPoint(page, 1.25, 4.25);
+  const marquee = page.locator('[data-editor-guide="marquee"]');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 4 });
+  const rectangle = (await marquee.boundingBox())!;
+  expect(Math.abs(rectangle.x - from.x)).toBeLessThan(1.5);
+  expect(Math.abs(rectangle.y - from.y)).toBeLessThan(1.5);
+  expect(Math.abs(rectangle.width - (to.x - from.x))).toBeLessThan(1.5);
+  await page.keyboard.press('Escape');
+  await expect(marquee).toHaveCount(0);
+  await page.mouse.up();
+  await expect(page.locator('.selection-properties')).toHaveCount(0);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.getByLabel('Selection X', { exact: true })).toHaveValue('0');
+  await expect(page.getByLabel('Selection Y', { exact: true })).toHaveValue('3');
+  await page.getByRole('button', { name: 'Place tool', exact: true }).click();
+  await page.mouse.click(from.x, from.y);
+  await count(page, 1);
+  await expect(marquee).toHaveCount(0);
+  await page.getByRole('button', { name: 'Print preview', exact: true }).click();
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 4 });
+  await expect(marquee).toHaveCount(0);
+  await page.mouse.up();
+  expect(await documentState(page)).toEqual(original);
+});
+
+test('editor has one Export entry, size control and zoom group at desktop and narrow widths', async ({
+  page
+}) => {
+  await start(page);
+  await expect(page.getByRole('tab', { name: 'Export', exact: true })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Export', exact: true })).toHaveCount(0);
+  await expect(page.locator('.status-dot, .save-indicator')).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Canvas zoom controls', exact: true })).toHaveCount(
+    1
+  );
+  await expect(page.getByRole('button', { name: 'Canvas size', exact: true })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Artboard size', exact: true })).toHaveCount(0);
+  await openExport(page);
+  await page.getByLabel('Export resolution').selectOption('4');
+  await expect(page.locator('.toast')).toHaveCount(0);
+  await page.screenshot({ path: 'artifacts/deduplicated-editor-desktop.png' });
+  await page.setViewportSize({ width: 320, height: 740 });
+  await openExport(page);
+  await expect(page.getByLabel('Export resolution')).toHaveValue('4');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Open Inspector', exact: true })).toBeFocused();
+  await expect(
+    page.getByRole('group', { name: 'Canvas zoom controls', exact: true })
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Canvas size', exact: true })).toBeVisible();
+  await page.screenshot({ path: 'artifacts/deduplicated-editor-narrow.png' });
+});
 
 test('Brickpress picks piece orientation with middle-click in Place mode and preserves panning', async ({
   page
@@ -161,7 +316,7 @@ async function exportFile(
   scale = '1',
   mode: 'design' | 'print' = 'print'
 ) {
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await openExport(page);
   await page
     .getByRole('button', {
       name: format === 'SVG' ? 'SVG Scalable artwork' : 'PNG High-resolution print',
@@ -306,7 +461,7 @@ test('palette tabs keep headers, searches and controls aligned across desktop an
     await palette.screenshot({ path: `artifacts/palette-presets-${width}.png` });
     if (width < 1000) {
       await page.keyboard.press('Escape');
-      await page.getByRole('button', { name: 'Open Properties', exact: true }).click();
+      await page.getByRole('button', { name: 'Open Inspector', exact: true }).click();
     }
     let inspectorFrame: { x: number; y: number; width: number; height: number } | undefined;
     for (const name of ['Properties', 'Layers', 'Export']) {
@@ -652,7 +807,7 @@ test('grid settings and responsive drawers stay usable at narrow widths', async 
       await page.keyboard.press('Escape');
       await expect(drawer).not.toBeVisible();
       await expect(trigger).toBeFocused();
-      await page.getByRole('button', { name: 'Open Properties', exact: true }).click();
+      await page.getByRole('button', { name: 'Open Inspector', exact: true }).click();
       await expect(page.getByRole('tab', { name: 'Properties', exact: true })).toBeVisible();
       await page.keyboard.press('Escape');
     }
@@ -684,7 +839,8 @@ test('first launch hydrates stable starter pieces and can select without autosav
   await page.getByRole('button', { name: 'Dismiss editor hint' }).click();
   await page.locator('.artboard [data-uid]').first().locator('path').click();
   await expect(page.getByText('Selected piece', { exact: true })).toBeVisible();
-  await expect(page.getByRole('toolbar', { name: 'Selection actions' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete selection', exact: true })).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'Selection actions' })).toHaveCount(0);
   expect(errors).toEqual([]);
   await page.screenshot({ path: test.info().outputPath('design-studio.png') });
 });
@@ -721,7 +877,7 @@ test('rejected physical/overlap/resize changes leave controls accurate, and phys
   await page.getByLabel('Allow overlap').click();
   await expect(page.getByLabel('Allow overlap')).toBeChecked();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Artboard size', exact: true }).click();
+  await page.getByRole('button', { name: 'Canvas size', exact: true }).click();
   await visibleLabel(page, 'Artboard preset').selectOption('8');
   await expect(visibleLabel(page, 'Artboard preset')).toHaveValue('16');
   await page.keyboard.press('Escape');
@@ -733,7 +889,7 @@ test('rejected physical/overlap/resize changes leave controls accurate, and phys
   await expect(page.getByLabel('Allow overlap')).not.toBeChecked();
 });
 
-test('keyboard placement, active ink thumbnails, tabs and synchronized zoom', async ({ page }) => {
+test('keyboard placement, active ink thumbnails, tabs and canvas zoom', async ({ page }) => {
   await start(page);
   const tile = page.getByRole('button', { name: 'Place Tile 1×1, 3070', exact: true });
   await expect(tile.locator('path')).toHaveAttribute('fill', '#ce4936');
@@ -762,10 +918,11 @@ test('keyboard placement, active ink thumbnails, tabs and synchronized zoom', as
   await page.getByRole('tab', { name: 'Properties', exact: true }).click();
   await page.getByRole('tab', { name: 'Export', exact: true }).click();
   await expect(page.getByLabel('Export resolution')).toHaveValue('4');
-  await page.getByRole('button', { name: 'Toolbar zoom in', exact: true }).click();
+  const beforeZoom = parseInt((await page.locator('.zoom-value').textContent())!);
+  await page.getByRole('button', { name: 'Canvas zoom in', exact: true }).click();
   const percentages = await page.locator('.zoom-value').allTextContents();
-  expect(percentages).toHaveLength(2);
-  expect(percentages[0]).toEqual(percentages[1]);
+  expect(percentages).toHaveLength(1);
+  expect(parseInt(percentages[0])).toBeGreaterThan(beforeZoom);
 });
 
 test('embossed guide persists independently and never enters the document or exports', async ({
@@ -835,7 +992,7 @@ test('WCAG checks pass for both modes, inspector tabs, menus and narrow drawers'
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 320, height: 844 });
   await audit();
-  for (const control of ['Open Pieces', 'Open Properties']) {
+  for (const control of ['Open Pieces', 'Open Inspector']) {
     await page.getByRole('button', { name: control, exact: true }).click();
     await audit();
     await page.keyboard.press('Escape');
@@ -876,7 +1033,7 @@ test('reference screenshots and enlarged text preserve accessible controls', asy
   }
   await page.screenshot({ path: 'artifacts/reference-enlarged-text.png' });
   await page.setViewportSize({ width: 640, height: 540 });
-  await page.getByRole('button', { name: 'Open Properties', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Inspector', exact: true }).click();
   await expect(page.getByLabel('Paper stock')).toBeVisible();
 });
 
@@ -907,10 +1064,10 @@ test('resizable panels and drawer popovers preserve focus, choices and document 
       Math.abs((await page.locator('.palette-shell').boundingBox())!.width - initialWidth)
     )
     .toBeLessThan(1);
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await openExport(page);
   await page.getByLabel('Export resolution').selectOption('4');
   await page.setViewportSize({ width: 320, height: 844 });
-  const properties = page.getByRole('button', { name: 'Open Properties', exact: true });
+  const properties = page.getByRole('button', { name: 'Open Inspector', exact: true });
   await properties.click();
   await expect(page.getByLabel('Export resolution')).toHaveValue('4');
   await page.getByRole('tab', { name: 'Properties', exact: true }).click();
@@ -928,7 +1085,7 @@ test('resizable panels and drawer popovers preserve focus, choices and document 
   await page.keyboard.press('Enter');
   await count(page, 1);
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Open Properties', exact: true }).click();
+  await page.getByRole('button', { name: 'Open Inspector', exact: true }).click();
   await page.setViewportSize({ width: 1448, height: 1086 });
   await expect(page.locator('.inspector-shell')).toBeVisible();
   await page.getByRole('tab', { name: 'Export', exact: true }).click();

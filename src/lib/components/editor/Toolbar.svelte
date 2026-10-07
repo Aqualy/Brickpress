@@ -1,25 +1,44 @@
 <script lang="ts">
   import { asset } from '$app/paths';
+  import { Dialog } from 'bits-ui';
   import type { Editor } from '../../stores/editor.svelte';
   import Icon from '../ui/Icon.svelte';
   import { Input } from '../ui/input';
   import { Button } from '../ui/button';
   import Popover from '../ui/Popover.svelte';
-  import ZoomControls from '../ui/ZoomControls.svelte';
   import GridControls from './GridControls.svelte';
   let {
     editor,
     onnew,
     onopen,
     onsave,
-    onexport
+    onsaveas
   }: {
     editor: Editor;
     onnew: () => void;
     onopen: () => void;
     onsave: () => void;
-    onexport: () => void;
+    onsaveas: () => void;
   } = $props();
+  let noticesOpen = $state(false),
+    notices = $state('');
+  async function openNotices() {
+    noticesOpen = true;
+    notices = 'Loading dependency notices…';
+    try {
+      const responses = await Promise.all([
+        fetch(asset('/THIRD_PARTY_NOTICES.txt')),
+        fetch(asset('/RUST_DEPENDENCY_NOTICES.txt'))
+      ]);
+      if (responses.some((response) => !response.ok))
+        throw new Error(
+          'Dependency notices could not be loaded. They are also included with the application.'
+        );
+      notices = (await Promise.all(responses.map((response) => response.text()))).join('\n\n');
+    } catch (error) {
+      notices = error instanceof Error ? error.message : 'Dependency notices could not be loaded.';
+    }
+  }
   function tool(value: 'select' | 'place' | 'hand') {
     editor.tool = value;
     if (value !== 'hand') editor.mode = 'design';
@@ -44,10 +63,13 @@
         /></label
       >
       <div class="menu-actions">
-        <Button onclick={onnew}><Icon name="file" /> New</Button><Button onclick={onopen}
-          ><Icon name="open" /> Open</Button
-        ><Button onclick={onsave}><Icon name="save" /> Save</Button>
+        <Button disabled={editor.documentBusy} onclick={onnew}><Icon name="file" /> New</Button
+        ><Button disabled={editor.documentBusy} onclick={onopen}><Icon name="open" /> Open</Button
+        ><Button disabled={editor.documentBusy} onclick={onsave}><Icon name="save" /> Save</Button>
       </div>
+      <Button class="menu-action" disabled={editor.documentBusy} onclick={onsaveas}
+        ><Icon name="save" /> Save As <kbd>⇧⌘/Ctrl S</kbd></Button
+      >
       <hr />
       <Button class="menu-action" aria-label="Hand tool" onclick={() => tool('hand')}
         ><Icon name="hand" /> Hand tool <kbd>H</kbd></Button
@@ -87,12 +109,15 @@
       </p>
       <p class="fine-print">
         Independent software. LEGO® is a trademark of the LEGO Group, which does not sponsor,
-        authorize or endorse Brickpress. <a
-          class="underline underline-offset-2"
-          href={asset('/THIRD_PARTY_NOTICES.txt')}
-          target="_blank"
-          rel="noreferrer">Third-party notices</a
-        >.
+        authorize or endorse Brickpress. {#if editor.desktop}<button
+            class="notices-link menu-action"
+            onclick={openNotices}>Third-party notices</button
+          >{:else}<a
+            class="underline underline-offset-2"
+            href={asset('/THIRD_PARTY_NOTICES.txt')}
+            target="_blank"
+            rel="noreferrer">Third-party notices</a
+          >{/if}.
       </p>
     </Popover>
     <Button
@@ -102,14 +127,23 @@
     >
   </div>
   <div class="toolbar-group file-actions desktop-actions">
-    <Button class="toolbar-button" onclick={onnew} title="New document"
-      ><Icon name="file" size={22} /><span>New</span></Button
+    <Button
+      class="toolbar-button"
+      disabled={editor.documentBusy}
+      onclick={onnew}
+      title="New document"><Icon name="file" size={22} /><span>New</span></Button
     >
-    <Button class="toolbar-button" onclick={onopen} title="Open · Ctrl/⌘ O"
-      ><Icon name="open" size={22} /><span>Open</span></Button
+    <Button
+      class="toolbar-button"
+      disabled={editor.documentBusy}
+      onclick={onopen}
+      title="Open · Ctrl/⌘ O"><Icon name="open" size={22} /><span>Open</span></Button
     >
-    <Button class="toolbar-button" onclick={onsave} title="Save · Ctrl/⌘ S"
-      ><Icon name="save" size={22} /><span>Save</span></Button
+    <Button
+      class="toolbar-button"
+      disabled={editor.documentBusy}
+      onclick={onsave}
+      title="Save · Ctrl/⌘ S"><Icon name="save" size={22} /><span>Save</span></Button
     >
   </div>
   <div class="toolbar-group history-actions desktop-actions">
@@ -167,18 +201,103 @@
       }}>Print preview</Button
     >
   </div>
-  <div class="toolbar-zoom"><ZoomControls {editor} location="Toolbar" /></div>
-  <div class="toolbar-group export-group">
-    <Button class="toolbar-button export-trigger" aria-label="Export" onclick={onexport}
-      ><Icon name="export" size={22} /><span>Export</span></Button
-    >
+  <div class="toolbar-group inspector-drawer-group">
     <Button
       class="icon-button drawer-toggle"
-      aria-label="Open Properties"
+      aria-label="Open Inspector"
       onclick={() => (editor.drawer = 'inspector')}><Icon name="settings" size={22} /></Button
-    >
-    <span class="save-indicator" title={editor.autosaveStatus}
-      ><span class="status-dot"></span><span class="sr-only">{editor.autosaveStatus}</span></span
     >
   </div>
 </header>
+
+<Dialog.Root bind:open={noticesOpen}>
+  <Dialog.Portal>
+    <Dialog.Overlay class="notices-overlay" />
+    <Dialog.Content
+      class="notices-dialog"
+      onCloseAutoFocus={(event) => {
+        event.preventDefault();
+        document.querySelector<HTMLButtonElement>('button[aria-label="Main menu"]')?.focus();
+      }}
+    >
+      <div class="notices-heading">
+        <Dialog.Title>Dependency notices</Dialog.Title><Dialog.Close
+          aria-label="Close dependency notices"><Icon name="close" size={16} /></Dialog.Close
+        >
+      </div>
+      <Dialog.Description
+        >Licenses and attribution for dependencies bundled with Brickpress.</Dialog.Description
+      >
+      <textarea readonly aria-label="Dependency license text" value={notices}></textarea>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
+
+<style>
+  .notices-link {
+    display: inline;
+    padding: 0;
+    min-height: 24px;
+    color: inherit;
+    text-decoration: underline;
+    background: none;
+    border: 0;
+    font: inherit;
+  }
+  :global(.notices-overlay) {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: #17203333;
+  }
+  :global(.notices-dialog) {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 81;
+    width: min(760px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: white;
+    border: 1px solid #cbd0d8;
+    border-radius: 6px;
+    color: #172033;
+    gap: 12px;
+    font-size: 12px;
+  }
+  .notices-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .notices-heading :global(h2) {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .notices-heading :global(button) {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #dce0e6;
+    border-radius: 4px;
+  }
+  textarea {
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    min-height: min(480px, 55dvh);
+    max-height: 70dvh;
+    border: 1px solid #dce0e6;
+    border-radius: 4px;
+    padding: 12px;
+    resize: none;
+    width: 100%;
+    font-family: monospace;
+  }
+</style>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Editor } from '../../stores/editor.svelte';
-  import { exportPng, exportSvg, downloadBlob, filename } from '../../export/export';
+  import { pngBlob, svgBlob, filename } from '../../export/export';
   import Icon from '../ui/Icon.svelte';
   import { Button } from '../ui/button';
   let { editor }: { editor: Editor } = $props();
@@ -18,15 +18,25 @@
     busy = true;
     error = '';
     try {
+      let completed = false;
+      const snapshot = editor.projectText();
       if (format === 'json') {
-        downloadBlob(
+        completed = await editor.exportBlob(
+          'project',
           new Blob([editor.projectText()], { type: 'application/json' }),
           `${filename(editor.doc.name)}.brickpress.json`
         );
-        editor.saved();
-      } else if (format === 'svg') exportSvg(editor.doc, { mode, paper, width, grid });
-      else await exportPng(editor.doc, { mode, paper, width, grid });
-      editor.notify('Export ready.');
+        if (completed && !editor.desktop && editor.projectText() === snapshot) editor.saved();
+      } else {
+        const doc = editor.doc,
+          name = `${filename(doc.name)}-${mode}.${format}`;
+        const blob =
+          format === 'svg'
+            ? svgBlob(doc, { mode, paper, width, grid })
+            : await pngBlob(doc, { mode, paper, width, grid });
+        completed = await editor.exportBlob(format === 'svg' ? 'svg' : 'png', blob, name);
+      }
+      if (completed) editor.notify('Export ready.');
     } catch (e) {
       error = e instanceof Error ? e.message : 'Export failed.';
     } finally {

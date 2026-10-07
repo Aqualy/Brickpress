@@ -1,0 +1,56 @@
+name: Private test installers
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    uses: ./.github/workflows/checks.yml
+  package:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+          - os: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Linux prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf
+      - run: npm ci
+      - run: cargo install cargo-about --version 0.9.2 --locked --features cli
+      - name: Build unsigned private installers
+        run: npm run desktop:build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Brickpress-${{ matrix.target }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+          if-no-files-found: error
+          retention-days: 14

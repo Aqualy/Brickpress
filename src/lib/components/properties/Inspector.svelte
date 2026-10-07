@@ -118,8 +118,6 @@
     </div>
   </Tabs.Root>
   <div class="inspector-footer">
-    <span>{editor.doc.options.physical ? 'Physical print mode' : 'Digital print mode'}</span><span
-      >{editor.allPieces.length} pieces</span
-    >
+    <span>{editor.doc.options.physical ? 'Physical print mode' : 'Digital print mode'}</span>
   </div>
 </aside>

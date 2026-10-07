@@ -8,23 +8,21 @@ are compatibility references, not claims of affiliation.
 
 ## Catalog provenance
 
-No project-wide open-source license has been applied yet. Keep the source and
-build private until the catalog's redistribution rights are confirmed and a
-license is chosen. Third-party notices below are attribution for dependencies,
-not an open-source license grant for the complete project.
+The catalog in `lego-letterpress-kit/lego-letterpress-kit/` is original work
+created by Tiebo (Aqualy), the Brickpress project owner. The owner confirmed
+authorship on 7 October 2026. Its JSON, TypeScript data, SVG thumbnails and
+contact sheets are project assets, not material supplied by the LEGO Group.
+The historical kit name does not identify an external author or licensor.
 
-The project was supplied with `lego-letterpress-kit/lego-letterpress-kit/`.
-Its README describes geometric top silhouettes, identifies approximate entries,
-and cites Brick Architect's Parts Guide as a reference for part IDs and names.
-It does not identify a copyright holder or provide a redistribution license.
-No permission from either the LEGO Group or Brick Architect has been verified.
+The kit's reference links identify part IDs and names. They do not imply that
+its geometry was copied from Brick Architect or LDraw. The suggestion to use
+LDraw for future CAD accuracy describes a possible replacement, not the source
+of the current geometry.
 
-The kit is retained as supplied, with its reference links and trademark notice.
-Before a public source or binary release, confirm who created the kit and the
-right to distribute its JSON, TypeScript, SVG thumbnails and contact sheets.
-Record that permission and applicable license here. A citation is not a license.
-The kit's suggestion to use LDraw is not evidence that these files came from
-LDraw; no LDraw license or provenance has been assumed.
+No project-wide open-source license has been applied yet. The original code
+and catalog remain under their owner's copyright until a license is chosen.
+Third-party notices are attribution for dependencies, not a license grant for
+the complete project. The repository currently remains private.
 
 ## Dependencies and artwork
 
@@ -47,8 +45,7 @@ trademark use. It is not a general license for software, product designs or
 commercial use. An open-source copyright license also does not clear another
 party's trademark, design, patent or copyright rights.
 
-No repository changes can guarantee immunity from a legal claim. Before public
-release, obtain an intellectual-property review of the catalog, product
-references and the Brickpress name in the intended jurisdictions, particularly
-if the software will be sold or used commercially. The current repository
-remains private; this notice is not a claim of legal clearance.
+The owner's original catalog is distinct from third-party trademarks and
+product references. Any project license applies to the owner's work; it does
+not grant rights to another party's trademarks or assets. The independence
+notice identifies that distinction without claiming legal clearance.

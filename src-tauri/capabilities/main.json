@@ -1,0 +1,25 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Local main editor only. Rust owns dialog-selected files; no generic filesystem or shell APIs.",
+  "windows": ["main"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:window:allow-destroy",
+    "allow-select-file",
+    "allow-read-selected-file",
+    "allow-write-selected-file",
+    "allow-release-file",
+    "allow-read-state",
+    "allow-write-state",
+    "allow-quarantine-state",
+    "allow-write-trace-asset",
+    "allow-read-trace-asset",
+    "allow-prune-trace-assets",
+    "allow-confirm-action",
+    "allow-confirm-unsaved",
+    "allow-confirm-conflict",
+    "allow-set-document-title"
+  ]
+}

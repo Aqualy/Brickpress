@@ -1,0 +1,8 @@
+{
+  "build": { "beforeBuildCommand": "npm run desktop:prepare:e2e" },
+  "app": {
+    "withGlobalTauri": true,
+    "security": { "capabilities": ["main", "e2e"] }
+  },
+  "bundle": { "active": false }
+}

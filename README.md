@@ -1,6 +1,6 @@
 # Brickpress
 
-A local, browser-based studio for modular tile compositions and simulated letterpress impressions. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas is used only to rasterize PNG exports. No accounts or backend.
+A local studio for modular tile compositions and simulated letterpress impressions, available in the browser and as a Tauri 2 desktop application. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas is used only to rasterize PNG exports. No accounts or remote backend.
 
 ## Run
 
@@ -21,26 +21,40 @@ npm run preview
 
 The production build is a static site in `build/`. Serve it with an ordinary static web server. Node 20.19 or newer is required.
 
+## Desktop application
+
+See [desktop development, installation, and testing](docs/desktop.md). The browser edition and desktop edition share the editor and version-1 projects; each has separate local storage.
+
+```sh
+npm ci
+cargo install cargo-about --version 0.9.2 --locked --features cli
+npm run desktop:dev
+npm run desktop:build
+```
+
+Desktop Save updates the opened project file. Save As chooses another location, and Ctrl/Command-Shift-S uses the same command. New, Open and Close protect changed documents with Save / Discard / Cancel. Export project creates a separate copy. Restored recovery documents are unsaved and ask for a save location. Native file access is limited to files explicitly selected in a system dialog.
+
 ## Working in the studio
 
 - Pick an essential piece, or use **Piece filters** to browse **All pieces**. Vertical categories show the full category catalog. Thumbnails preview the active ink. Click the board to stamp a piece, or drag it from the palette. Choosing a piece focuses the artboard: arrows move the placement cursor, Enter stamps, and **R** rotates.
 - In **Place** mode, middle-click an existing piece to pick its shape, rotation and reflections, keeping the active ink. For keyboard sampling, use arrows to move the placement cursor over a piece, then press **I**. Sampling also works on locked passes and changes only the placement tool. Middle-drag empty space, or use **H** / Space-drag, to pan.
 - The palette’s **Presets** tab saves all visible pieces or just the selection as a named composition. Empty margins are trimmed; ink colors, pass order, rotations and reflections are preserved. Drag a preset onto any project, or choose it and use arrows, **R**, and Enter. Pieces keep their stud dimensions. The board is never resized; placements that do not fit, collide, or violate physical mode are rejected without partial insertion. A successful placement is one undoable transaction. Rename, delete, import, and export presets from the library controls.
-- **Grid → Tracing image** loads a PNG, JPEG, WebP, GIF, AVIF or BMP beneath the pieces. Adjust opacity and visibility; unlock position to edit X, Y and width in studs, or fit and center the guide. Image proportions stay fixed. Tracing images are saved locally in IndexedDB and recovered on reload; New/Open clears the current guide. They are hidden in Print Preview and excluded from project, SVG and PNG exports. Supported images are limited to 20 MB and 40 megapixels.
-- **V** selects, **B** places and **H** pans. Shift-click adds to selection; dragging empty board space creates a box selection. Arrows move selected pieces one stud; Shift-arrows move four studs.
+- **Grid → Tracing image** loads a PNG, JPEG, WebP, GIF, AVIF or BMP beneath the pieces. Adjust opacity and visibility; unlock position to edit X, Y and width in studs, or fit and center the guide. Image proportions stay fixed. Tracing images are saved in IndexedDB in the browser and in application data on desktop, and recovered on reload; New/Open clears the current guide. They are hidden in Print Preview and excluded from project, SVG and PNG exports. Supported images are limited to 20 MB and 40 megapixels.
+- **V** selects, **B** places and **H** pans. Shift-click or Shift-drag adds to selection; dragging empty board space or the surrounding workspace creates a box selection. Arrows move selected pieces one stud; Shift-arrows move four studs.
 - **R** rotates a selection. Delete/Backspace deletes; Ctrl/Command-D duplicates; Ctrl/Command-C/V copies and pastes; Ctrl/Command-A selects all unlocked visible pieces.
 - Ctrl/Command-Z undoes; Ctrl/Command-Shift-Z redoes. Dragging commits exactly one history entry. History keeps the last 100 document transactions.
-- Space-drag pans. **H** plus arrows pans with the keyboard. The wheel zooms around the pointer. Both zoom displays share the same view; the corner icon fits the artboard, percentage buttons reset to 100%, and the main menu includes 200%.
+- Space-drag pans. **H** plus arrows pans with the keyboard. The wheel zooms around the pointer. Size and zoom controls sit below the canvas; the corner icon fits the artboard, the percentage button resets to 100%, and the main menu includes 200%.
 - Drag the separators to resize desktop panels, or focus a separator and use the arrow keys. **Reset panel widths** in the main menu restores the reference proportions. Below 1,000 pixels the same panels become modal drawers, keeping inspector choices intact.
 - Each color is an ink pass. Recoloring selected pieces moves them into a matching or new pass. Use pass actions to recolor, lock, reorder, or delete. Names can be edited directly; expand passes in **Layers** to select individual pieces.
 - **Properties** contains inks, passes, paper, and four primary print controls. Open **Advanced print settings** for the other seven controls, presets, and reseeding. Registration error displays the maximum per-axis offset in millimeters, using the existing normalized simulation parameter.
+- The inspector’s **Export** tab contains PNG, SVG, and project export options. Selection actions appear in **Properties**, or above the canvas when that section is unavailable. Save status appears in the footer.
 - **Grid** contains style, intervals, symmetry, overlap, and physical mode. Optional embossed studs are a Design-mode editor guide. The appearance preference is saved separately from projects and never included in exports; Flat remains the default.
 - Physical mode permits only catalog pieces with standard, one-plate printing surfaces. The two non-standard-height pieces stay visible but disabled in the palette. Existing non-standard pieces must be removed before enabling that mode.
 - Optional symmetry previews mirrored placements and creates pieces only when stamped. Explicit overlap can be enabled; it cannot be disabled until overlapping pieces are separated.
 
 ## Files and recovery
 
-**Save** downloads an editable `.brickpress.json` file containing all geometry references, positions, rotations, mirror flags, piece seeds, pass seeds, swatches, paper and print settings. **Open** also accepts legacy `.legopress.json` files and validates a project before replacing the current document. The version 1 format and legacy browser storage keys remain compatible, so existing projects and autosaves are preserved. New documents prompt when file-unsaved changes exist.
+Browser **Save** downloads an editable `.brickpress.json` file containing all geometry references, positions, rotations, mirror flags, piece seeds, pass seeds, swatches, paper and print settings. Desktop **Save** writes the active selected file, and **Save As** chooses a new location. **Open** also accepts legacy `.legopress.json` files and validates a project before replacing the current document. The version 1 format and legacy browser storage keys remain compatible, so existing projects and autosaves are preserved. New documents prompt when file-unsaved changes exist.
 
 Changes also autosave to this browser's localStorage. Reloading recovers the most recent document. Keep a project file for durable storage: clearing browser data removes device autosaves. Copy/paste uses an editor-local clipboard.
 
@@ -64,7 +78,7 @@ SVG filter rendering differs between vector applications; use PNG for a consiste
 
 A per-page `Editor` class owns immutable document transactions and reactive interaction state. Palette, canvas, properties, paper, press settings, layers and export are separate Svelte components. Keyed piece components and transient drag transforms keep pointer movement out of document history and autosave.
 
-Unit tests cover the supplied catalog, lookup and malformed entries, footprint/mask rotation, collisions, mirrored placements, serialization, validation, undo/redo, deterministic noise, pass offsets and SVG exports. Browser tests cover all 41 pieces, core editing, multiple selections, passes, physical mode, symmetry, save/load/recovery, PNG/SVG output, responsive layout down to 320 CSS pixels, keyboard placement, tab and popover focus, pointer and keyboard panel resizing, nested drawer popovers, synchronized zoom, independent stud guides, accessibility scans, and a 2,000-piece document.
+Unit tests cover the supplied catalog, lookup and malformed entries, footprint/mask rotation, collisions, mirrored placements, serialization, validation, undo/redo, deterministic noise, pass offsets and SVG exports. Browser tests cover all 41 pieces, core editing, workspace marquee selection, multiple selections, passes, physical mode, symmetry, save/load/recovery, PNG/SVG output, responsive layout down to 320 CSS pixels, keyboard placement, tab and popover focus, pointer and keyboard panel resizing, nested drawer popovers, canvas zoom, independent stud guides, accessibility scans, and a 2,000-piece document.
 
 ```sh
 npx playwright install chromium
@@ -73,7 +87,7 @@ npm run test:e2e
 
 Brickpress is independent software. LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse Brickpress. Product references identify compatible geometry; they do not grant trademark, design or copyright rights. See [NOTICE.md](NOTICE.md) for attribution and release considerations.
 
-The project remains private and has no project-wide open-source license yet. The supplied catalog has no redistribution license notice; confirm its provenance and permissions before a public release. `npm run notices` collects third-party code, font and icon licenses, and every production build includes that file. These notices do not establish clearance for the catalog or product designs.
+The project remains private and has no project-wide open-source license yet. The catalog is original work created by Tiebo (Aqualy), as recorded in `NOTICE.md`; its historical kit name does not imply LEGO Group authorship. `npm run notices` collects third-party code, font and icon licenses, and every production build includes that file. Dependency notices remain separate from the license chosen for the project's original code and catalog.
 
 ## Reference UI boundaries
 

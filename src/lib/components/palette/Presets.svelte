@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Editor } from '../../stores/editor.svelte';
-  import { downloadBlob, filename } from '../../export/export';
+  import { filename } from '../../export/export';
   import type { CompositionPreset } from '../../persistence/presets';
   import { Button } from '../ui/button';
   import { Input } from '../ui/input';
@@ -16,18 +16,23 @@
   let filtered = $derived(
     editor.presets.filter((preset) => preset.name.toLowerCase().includes(query.toLowerCase()))
   );
-  function save(event: SubmitEvent) {
+  async function save(event: SubmitEvent) {
     event.preventDefault();
-    if (editor.savePreset(name, source === 'selection')) {
+    if (await editor.savePreset(name, source === 'selection')) {
       name = '';
       saveOpen = false;
     }
   }
-  function exportPresets(presets: CompositionPreset[]) {
-    downloadBlob(
-      new Blob([JSON.stringify(presets, null, 2)], { type: 'application/json' }),
-      `${presets.length === 1 ? filename(presets[0].name) : 'brickpress-library'}.brickpress-presets.json`
-    );
+  async function exportPresets(presets: CompositionPreset[]) {
+    try {
+      await editor.exportBlob(
+        'presets',
+        new Blob([JSON.stringify(presets, null, 2)], { type: 'application/json' }),
+        `${presets.length === 1 ? filename(presets[0].name) : 'brickpress-library'}.brickpress-presets.json`
+      );
+    } catch (error) {
+      editor.notify(error instanceof Error ? error.message : 'The presets could not be exported.');
+    }
   }
   async function importFile(event: Event) {
     const input = event.currentTarget as HTMLInputElement,
@@ -35,7 +40,7 @@
     if (!file) return;
     try {
       if (file.size > 20_000_000) throw new Error('Preset files must be smaller than 20 MB.');
-      editor.importPresets(await file.text());
+      await editor.importPresets(await file.text());
     } catch (e) {
       editor.notify(e instanceof Error ? e.message : 'The preset file could not be opened.');
     }
@@ -105,7 +110,8 @@
       class="icon-button"
       aria-label="Import presets"
       title="Import presets"
-      onclick={() => fileInput.click()}><Icon name="open" size={17} /></Button
+      onclick={() => (editor.desktop ? editor.choosePresetFile() : fileInput.click())}
+      ><Icon name="open" size={17} /></Button
     >
     <Button
       class="icon-button"
@@ -169,5 +175,8 @@
         ? 'No matching presets.'
         : 'Save a composition or selected pieces to reuse them in any project.'}
     </p>{/if}
-  <p class="fine-print">Saved in this browser. Export the library to use it on another device.</p>
+  <p class="fine-print">
+    Saved {editor.desktop ? 'in this application' : 'in this browser'}. Export the library to use it
+    on another device.
+  </p>
 </div>

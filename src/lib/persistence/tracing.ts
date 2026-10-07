@@ -18,12 +18,30 @@ export async function readTraceFile(file: File) {
   if (!formats.test(file.type))
     throw new Error('Choose a PNG, JPEG, WebP, GIF, AVIF or BMP image.');
   if (file.size > 20_000_000) throw new Error('Tracing images must be smaller than 20 MB.');
-  const bitmap = await createImageBitmap(file).catch(() => {
-    throw new Error('This image could not be decoded. Try PNG or JPEG.');
-  });
-  const width = bitmap.width,
+  let width: number, height: number;
+  if (typeof createImageBitmap === 'function') {
+    const bitmap = await createImageBitmap(file).catch(() => {
+      throw new Error('This image could not be decoded. Try PNG or JPEG.');
+    });
+    width = bitmap.width;
     height = bitmap.height;
-  bitmap.close();
+    bitmap.close();
+  } else {
+    const image = new Image(),
+      url = URL.createObjectURL(file);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () =>
+          reject(new Error('This image could not be decoded. Try PNG or JPEG.'));
+        image.src = url;
+      });
+      width = image.naturalWidth;
+      height = image.naturalHeight;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
   if (!width || !height || width * height > 40_000_000)
     throw new Error('Use an image up to 40 megapixels.');
   return {
@@ -32,6 +50,27 @@ export async function readTraceFile(file: File) {
     imageWidth: width,
     imageHeight: height
   };
+}
+
+export function validateTrace(value: TraceImage): void {
+  if (
+    !value ||
+    !(value.asset instanceof Blob) ||
+    !formats.test(value.asset.type) ||
+    value.asset.size > 20_000_000 ||
+    typeof value.name !== 'string' ||
+    value.name.length > 160 ||
+    ![value.imageWidth, value.imageHeight, value.width, value.height].every(
+      (n) => Number.isFinite(n) && n > 0
+    ) ||
+    value.imageWidth * value.imageHeight > 40_000_000 ||
+    ![value.x, value.y, value.opacity].every(Number.isFinite) ||
+    value.opacity < 0 ||
+    value.opacity > 1 ||
+    typeof value.visible !== 'boolean' ||
+    typeof value.locked !== 'boolean'
+  )
+    throw new Error('The saved tracing guide is invalid. Upload it again.');
 }
 
 /** Browser-local guide storage, kept out of project and artwork export data. */
@@ -55,20 +94,7 @@ export async function loadTrace(): Promise<TraceImage | null> {
       request.onerror = () => reject(new Error('The tracing image could not be recovered.'));
     });
     if (!value) return null;
-    if (
-      !(value.asset instanceof Blob) ||
-      !formats.test(value.asset.type) ||
-      typeof value.name !== 'string' ||
-      ![value.imageWidth, value.imageHeight, value.width, value.height].every(
-        (n) => Number.isFinite(n) && n > 0
-      ) ||
-      ![value.x, value.y, value.opacity].every(Number.isFinite) ||
-      value.opacity < 0 ||
-      value.opacity > 1 ||
-      typeof value.visible !== 'boolean' ||
-      typeof value.locked !== 'boolean'
-    )
-      throw new Error('The saved tracing guide is invalid. Upload it again.');
+    validateTrace(value);
     return value;
   } finally {
     db.close();

@@ -385,27 +385,10 @@ kbd {
   min-height: 32px;
   padding: 5px 8px;
 }
-.toolbar-zoom {
-  border-right: 1px solid var(--line);
-  padding: 0 16px;
-}
-.export-group {
+.inspector-drawer-group {
+  display: none;
   border: 0;
   padding: 0;
-  gap: 4px;
-  position: relative;
-}
-.save-indicator {
-  position: absolute;
-  right: 4px;
-  top: 8px;
-}
-.status-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #26744b;
 }
 .drawer-toggle,
 .compact-actions {
@@ -897,20 +880,6 @@ kbd {
 .paper-stock select:focus-visible {
   outline: 0;
 }
-.paper-size-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 12px;
-}
-.paper-size-row > span {
-  font-size: var(--ui-size);
-}
-.paper-size-row .size-trigger {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--ui-size);
-}
 .size-trigger {
   display: flex;
   align-items: center;
@@ -1264,7 +1233,7 @@ kbd {
 }
 .toast {
   position: fixed;
-  bottom: 30px;
+  bottom: calc(var(--footer-height, 25px) + 5px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
@@ -1374,9 +1343,6 @@ kbd {
   .mode-switch button {
     padding: 0 15px;
   }
-  .toolbar-zoom {
-    padding: 0 10px;
-  }
   .footer-shortcuts {
     display: none;
   }
@@ -1443,11 +1409,11 @@ kbd {
     padding: 8px var(--panel-inset);
     min-height: 48px;
   }
-  .drawer-toggle {
+  .drawer-toggle,
+  .inspector-drawer-group {
     display: inline-flex;
   }
-  .desktop-actions,
-  .toolbar-zoom {
+  .desktop-actions {
     display: none !important;
   }
   .app-header {
@@ -1465,9 +1431,6 @@ kbd {
   }
   .menu-group {
     gap: 3px;
-  }
-  .save-indicator {
-    display: none;
   }
   .palette-panel {
     border: 0;
@@ -1498,11 +1461,13 @@ kbd {
     gap: 3px 8px;
   }
   .toolbar-group {
-    height: 46px;
+    height: auto;
     min-height: 46px;
+    max-width: 100%;
+    flex-wrap: wrap;
   }
   .toolbar-button {
-    height: 46px;
+    height: auto;
     min-height: 46px;
     gap: 2px;
     min-width: 40px;
@@ -1523,11 +1488,16 @@ kbd {
     width: 100%;
   }
   .mode-switch button {
-    flex: 1;
-    height: 34px;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 34px;
+    height: auto;
+    padding: 3px 6px;
+    white-space: normal;
+    overflow-wrap: anywhere;
     font-size: 13px;
   }
-  .export-group {
+  .inspector-drawer-group {
     margin-left: auto;
   }
   .canvas-bottom {
@@ -1577,6 +1547,13 @@ kbd {
     gap: 8px;
     width: 100%;
     flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .footer-statistics > span {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
   .app-footer .local-save {
     margin-left: auto;

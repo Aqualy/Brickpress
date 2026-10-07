@@ -1,0 +1,15 @@
+Brickpress Rust dependency notices
+Generated from dependencies pinned in Cargo.lock. Keep these notices with distributed builds.
+The Brickpress application and supplied piece catalog have separate provenance; see NOTICE.md.
+
+{{#each licenses}}
+{{name}} ({{id}})
+========================================================================
+Used by:
+{{#each used_by}}
+- {{crate.name}} {{crate.version}}{{#if crate.repository}} ({{crate.repository}}){{/if}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}

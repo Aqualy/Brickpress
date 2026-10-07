@@ -1,0 +1,22 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "e2e",
+  "description": "Explicit test configuration only. Commands and driver do not exist in release binaries.",
+  "windows": ["main"],
+  "permissions": [
+    "wdio:default",
+    "wdio-webdriver:default",
+    "core:window:allow-set-size",
+    "core:window:allow-title",
+    "allow-test-reset",
+    "allow-test-fixture",
+    "allow-test-queue-file",
+    "allow-test-queue-choice",
+    "allow-test-read-file",
+    "allow-test-read-bytes",
+    "allow-test-corrupt-file",
+    "allow-test-request-close",
+    "allow-test-request-quit",
+    "allow-test-pending-dialogs"
+  ]
+}

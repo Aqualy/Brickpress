@@ -43,6 +43,19 @@
   let printed = $derived(editor.mode === 'print');
   let selectedIds = $derived(new Set(editor.selected));
   let selected = $derived(editor.selectedPieces);
+  let selectionInspectorVisible = $derived(
+    editor.inspectorTab === 'properties' && (!editor.narrow || editor.drawer === 'inspector')
+  );
+  let workspaceMarquee = $derived.by(() => {
+    if (!marquee) return null;
+    const scale = studPixels * zoom;
+    return {
+      x: viewportWidth / 2 + panX + (marquee.x - board.width / 2) * scale,
+      y: viewportHeight / 2 + panY + (marquee.y - board.height / 2) * scale,
+      width: marquee.width * scale,
+      height: marquee.height * scale
+    };
+  });
   let ghostRows = $derived(
     hover && editor.tool === 'place' && !printed
       ? editor.activePresetId
@@ -142,7 +155,11 @@
   }
   function pointerdown(event: PointerEvent) {
     if (event.button !== 0 && event.button !== 1) return;
-    if ((event.target as Element).closest('button, input, .onboarding, .contextual-toolbar'))
+    if (
+      (event.target as Element).closest(
+        'button, input, select, textarea, a, summary, [contenteditable="true"], .onboarding, .contextual-toolbar'
+      )
+    )
       return;
     viewport.focus({ preventScroll: true });
     const p = point(event);
@@ -160,10 +177,11 @@
       initialPan = { x: panX, y: panY };
       event.preventDefault();
     } else if (printed) return;
-    else if (!inside(p)) {
-      if (!event.shiftKey) editor.selected = [];
-      return;
-    } else if (editor.tool === 'place') {
+    else if (editor.tool === 'place') {
+      if (!inside(p)) {
+        if (!event.shiftKey) editor.selected = [];
+        return;
+      }
       editor.place(Math.floor(p.x), Math.floor(p.y));
       event.preventDefault();
       return;
@@ -304,6 +322,7 @@
   onpointermove={pointermove}
   onpointerup={pointerup}
   onpointercancel={cancelDrag}
+  onlostpointercapture={cancelDrag}
   onpointerleave={() => {
     if (!dragKind && document.activeElement !== viewport) hover = null;
   }}
@@ -311,7 +330,7 @@
   ondragover={dragover}
   ondrop={drop}
 >
-  {#if selected.length && !printed}<div
+  {#if selected.length && !printed && !selectionInspectorVisible}<div
       class="contextual-toolbar"
       role="toolbar"
       aria-label="Selection actions"
@@ -497,15 +516,6 @@
               stroke-dasharray="3 2"
             />{/each}</g
         >
-        {#if marquee}<rect
-            {...marquee}
-            fill="#0057e6"
-            fill-opacity=".08"
-            stroke="#0057e6"
-            stroke-width="1"
-            vector-effect="non-scaling-stroke"
-            pointer-events="none"
-          />{/if}
         {#each ghostRows as row, i (i)}{@const ghost = row.piece}{@const p = getPiece(
             ghost.pieceId
           )!}<path
@@ -542,6 +552,23 @@
       >
     </div>
   </div>
+  {#if workspaceMarquee}
+    <svg
+      class="selection-overlay"
+      viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect
+        data-editor-guide="marquee"
+        {...workspaceMarquee}
+        fill="#0057e6"
+        fill-opacity=".08"
+        stroke="#0057e6"
+        stroke-width="1"
+      />
+    </svg>
+  {/if}
   {#if hint}<div class="onboarding">
       <span class="onboarding-mark"><Icon name="stamp" size={19} /></span>
       <div>
@@ -557,3 +584,14 @@
     <ZoomControls {editor} location="Canvas" fit />
   </div>
 </div>
+
+<style>
+  .selection-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+</style>

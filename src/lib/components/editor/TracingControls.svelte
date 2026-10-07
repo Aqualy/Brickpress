@@ -103,7 +103,9 @@
     </div>
   {/if}
   <div class="trace-placement-actions">
-    <Button disabled={editor.traceLoading} onclick={() => fileInput.click()}
+    <Button
+      disabled={editor.traceLoading}
+      onclick={() => (editor.desktop ? editor.chooseTracingImage() : fileInput.click())}
       ><Icon name="open" size={16} />
       {editor.traceLoading
         ? 'Loading image…'

@@ -1,0 +1,78 @@
+name: Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  frontend:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run validate:catalog
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-15, macos-15-intel, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Linux webview prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf xvfb
+      - run: npm ci
+      - run: cargo install cargo-about --version 0.9.2 --locked --features cli
+      - run: npm run notices:rust
+      - run: npm run build
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+      - run: npm run desktop:build:e2e
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets --features desktop-e2e -- -D warnings
+      - run: npm run desktop:test
+        if: runner.os != 'Linux'
+      - run: xvfb-run -a npm run desktop:test
+        if: runner.os == 'Linux'
+      - name: Windows native clean close and recovery flush
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: pwsh -NoProfile -STA -File tests/native/windows-clean-close.ps1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-smoke-${{ matrix.os }}
+          path: artifacts/native/
+          retention-days: 14
+          if-no-files-found: ignore

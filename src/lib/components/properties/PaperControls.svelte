@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { Editor } from '../../stores/editor.svelte';
   import { paperPresets } from '../../printing/settings';
-  import BoardSize from '../ui/BoardSize.svelte';
   import Popover from '../ui/Popover.svelte';
   import Icon from '../ui/Icon.svelte';
   let { editor }: { editor: Editor } = $props();
@@ -37,7 +36,6 @@
       >{#each Object.keys(paperPresets) as name (name)}<option>{name}</option>{/each}</select
     ></label
   >
-  <div class="paper-size-row"><span>Size</span><BoardSize {editor} /></div>
   <Popover label="Paper texture and color" className="text-button paper-details-button">
     {#snippet trigger()}<Icon name="settings" size={15} /><span>Paper texture & color</span
       >{/snippet}

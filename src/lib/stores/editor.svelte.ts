@@ -12,11 +12,11 @@ import {
   capturePreset,
   parsePresets,
   presetRows,
-  PRESETS_KEY,
   type CompositionPreset
 } from '../persistence/presets';
 import { readTraceFile, type TraceImage, type TraceOverlay } from '../persistence/tracing';
 import type { InkPass, PlacedPiece, PressDocument } from '../types/document';
+import { platformError, type FileKind, type PlatformAdapter } from '../platform/types';
 
 type ClipboardPiece = { piece: PlacedPiece; color: string; name: string };
 export class Editor {
@@ -52,6 +52,85 @@ export class Editor {
   }
   toast = $state('');
   dirty = $state(false);
+  desktop = $state(false);
+  documentBusy = $state(false);
+  transitioning = $state(false);
+  activeFilePath = $state<string | null>(null);
+  private platform?: PlatformAdapter;
+  private presetWrites: Promise<unknown> = Promise.resolve();
+  private assetOperations = new Set<Promise<unknown>>();
+  private trackAsset<T>(operation: () => Promise<T>) {
+    const pending = operation();
+    this.assetOperations.add(pending);
+    const finish = () => this.assetOperations.delete(pending);
+    void pending.then(finish, finish);
+    return pending;
+  }
+  async flushAssets() {
+    while (this.assetOperations.size) await Promise.all([...this.assetOperations]);
+  }
+  setPlatform(platform: PlatformAdapter) {
+    this.platform = platform;
+    this.desktop = platform.desktop;
+  }
+  async confirmAction(message: string) {
+    try {
+      return this.platform ? await this.platform.confirmAction(message) : false;
+    } catch (error) {
+      this.notify(platformError(error).message);
+      return false;
+    }
+  }
+  async flushPresets() {
+    await this.presetWrites;
+  }
+  async exportBlob(kind: Exclude<FileKind, 'trace'>, blob: Blob, name: string) {
+    if (!this.platform) throw new Error('Storage is still loading.');
+    const result = await this.platform.exportFile(kind, blob, name);
+    if (result.status === 'error') throw new Error(result.error.message);
+    return result.status === 'success';
+  }
+  chooseTracingImage() {
+    return this.trackAsset(() => this.readSelectedTracingImage());
+  }
+  private async readSelectedTracingImage() {
+    const request = ++this.traceRequest;
+    this.traceLoading = true;
+    try {
+      if (!this.platform) return;
+      const result = await this.platform.chooseFile('trace');
+      if (result.status === 'error') throw result.error;
+      if (result.status !== 'success') return;
+      try {
+        if (request !== this.traceRequest) return;
+        await this.uploadTrace(result.value.file);
+      } finally {
+        if (result.value.selected) await this.platform.releaseFile(result.value.selected);
+      }
+    } catch (error) {
+      if (request === this.traceRequest) this.notify(platformError(error).message);
+    } finally {
+      if (request === this.traceRequest) this.traceLoading = false;
+    }
+  }
+  choosePresetFile() {
+    return this.trackAsset(() => this.readSelectedPresetFile());
+  }
+  private async readSelectedPresetFile() {
+    try {
+      if (!this.platform) return;
+      const result = await this.platform.chooseFile('presets');
+      if (result.status === 'error') throw result.error;
+      if (result.status !== 'success') return;
+      try {
+        await this.importPresets(await result.value.file.text());
+      } finally {
+        if (result.value.selected) await this.platform.releaseFile(result.value.selected);
+      }
+    } catch (error) {
+      this.notify(platformError(error).message);
+    }
+  }
   autosaveStatus = $state('Saved on this device');
   historyVersion = $state(0);
   zoomCommand = $state.raw<{ value: number | 'fit'; token: number }>({ value: 'fit', token: 0 });
@@ -69,10 +148,16 @@ export class Editor {
     this.presets = parsePresets(text);
     if (!this.activePreset) this.activePresetId = null;
   }
-  private writePresets(next: CompositionPreset[]) {
+  private writePresets(update: () => CompositionPreset[]) {
+    const pending = this.presetWrites.then(() => this.persistPresets(update()));
+    this.presetWrites = pending.catch(() => undefined);
+    return pending;
+  }
+  private async persistPresets(next: CompositionPreset[]) {
     try {
       if (next.length > 100) throw new Error('The library can hold up to 100 presets.');
-      localStorage.setItem(PRESETS_KEY, JSON.stringify(next));
+      if (!this.platform) throw new Error('Storage is still loading.');
+      await this.platform.writeState('presets', JSON.stringify(next));
       this.presets = next;
       return true;
     } catch (e) {
@@ -84,14 +169,14 @@ export class Editor {
       return false;
     }
   }
-  savePreset(name: string, selectionOnly = false) {
+  async savePreset(name: string, selectionOnly = false) {
     try {
       const preset = capturePreset(
         this.doc,
         name,
         selectionOnly ? new Set(this.selected) : undefined
       );
-      if (this.writePresets([...this.presets, preset])) {
+      if (await this.writePresets(() => [...this.presets, preset])) {
         this.paletteTab = 'presets';
         this.notify(`Saved “${preset.name}” to your presets.`);
         return true;
@@ -101,28 +186,36 @@ export class Editor {
     }
     return false;
   }
-  renamePreset(id: string, name: string) {
+  async renamePreset(id: string, name: string) {
     name = name.trim();
     if (!name || name.length > 80) {
       this.notify('Use a preset name of 1–80 characters.');
       return;
     }
-    this.writePresets(this.presets.map((p) => (p.id === id ? { ...p, name } : p)));
+    await this.writePresets(() => this.presets.map((p) => (p.id === id ? { ...p, name } : p)));
   }
-  deletePreset(id: string) {
-    if (this.writePresets(this.presets.filter((p) => p.id !== id)) && this.activePresetId === id) {
+  async deletePreset(id: string) {
+    if (
+      (await this.writePresets(() => this.presets.filter((p) => p.id !== id))) &&
+      this.activePresetId === id
+    ) {
       this.activePresetId = null;
       this.tool = 'select';
     }
   }
-  importPresets(text: string) {
+  async importPresets(text: string) {
     const imported = parsePresets(text);
-    const next = [...this.presets];
-    for (const p of imported) {
-      if (next.some((saved) => JSON.stringify(saved) === JSON.stringify(p))) continue;
-      next.push({ ...p, id: next.some((saved) => saved.id === p.id) ? newId() : p.id });
-    }
-    if (this.writePresets(next)) this.notify(`Imported ${imported.length} composition presets.`);
+    if (
+      await this.writePresets(() => {
+        const next = [...this.presets];
+        for (const p of imported) {
+          if (next.some((saved) => JSON.stringify(saved) === JSON.stringify(p))) continue;
+          next.push({ ...p, id: next.some((saved) => saved.id === p.id) ? newId() : p.id });
+        }
+        return next;
+      })
+    )
+      this.notify(`Imported ${imported.length} composition presets.`);
   }
   choosePreset(id: string, focus = true) {
     if (!this.presets.some((p) => p.id === id)) return;
@@ -185,10 +278,15 @@ export class Editor {
     this.notify(`Placed “${preset.name}”.`);
   }
   restoreTrace(record: TraceImage | null) {
+    if (this.trace) URL.revokeObjectURL(this.trace.url);
+    this.trace = null;
     if (!record) return;
     this.trace = { ...record, url: URL.createObjectURL(record.asset) };
   }
-  async uploadTrace(file: File) {
+  uploadTrace(file: File) {
+    return this.trackAsset(() => this.decodeTrace(file));
+  }
+  private async decodeTrace(file: File) {
     const request = ++this.traceRequest;
     this.traceLoading = true;
     try {
@@ -561,7 +659,7 @@ export class Editor {
         [doc.passes[index], doc.passes[next]] = [doc.passes[next], doc.passes[index]];
     });
   }
-  removePass(id: string) {
+  async removePass(id: string) {
     if (this.doc.passes.length === 1) {
       this.notify('Keep at least one ink pass.');
       return;
@@ -569,7 +667,7 @@ export class Editor {
     const pass = this.doc.passes.find((p) => p.id === id)!;
     if (
       pass.pieces.length &&
-      !window.confirm(`Delete “${pass.name}” and its ${pass.pieces.length} pieces?`)
+      !(await this.confirmAction(`Delete “${pass.name}” and its ${pass.pieces.length} pieces?`))
     )
       return;
     this.commit((doc) => (doc.passes = doc.passes.filter((p) => p.id !== id)));
@@ -615,10 +713,10 @@ export class Editor {
     this.commit((doc) => (doc.options.physical = physical));
     if (physical && !isPhysical(getPiece(this.activePieceId)!)) this.choosePiece('3070');
   }
-  clear() {
+  async clear() {
     if (
       this.allPieces.length &&
-      !window.confirm('Clear every piece from the canvas? You can undo this.')
+      !(await this.confirmAction('Clear every piece from the canvas? You can undo this.'))
     )
       return;
     this.commit((doc) => {
@@ -627,13 +725,6 @@ export class Editor {
     this.selected = [];
   }
   newDocument() {
-    if (
-      this.dirty &&
-      !window.confirm(
-        'Start a new document? Save the current project first if you want to keep it.'
-      )
-    )
-      return;
     this.removeTrace();
     this.activePresetId = null;
     this.doc = createDocument();

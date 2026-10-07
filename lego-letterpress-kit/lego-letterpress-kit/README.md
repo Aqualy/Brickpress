@@ -2,6 +2,10 @@
 
 A developer-ready 2D piece library for building a grid-based editor inspired by LEGO letterpress printing.
 
+This catalog is original work created by Tiebo (Aqualy), the Brickpress project
+owner. The historical kit name does not imply LEGO Group authorship. See the
+project's [catalog provenance notice](../../NOTICE.md) for ownership and licensing.
+
 ## Files
 
 - `letterpress-pieces.json` — canonical data file, 41 pieces.
@@ -35,8 +39,7 @@ Use `gridMask`, not the SVG path, for snapping/collision. This preserves LEGO-li
 A strict physical letterpress setup should use pieces with:
 
 ```ts
-piece.physicalLetterpressReady &&
-piece.surfaceHeightPlates === 1
+piece.physicalLetterpressReady && piece.surfaceHeightPlates === 1;
 ```
 
 `68869` and `74169` are included for digital completeness but are 2/3-brick-high special elements, so they do not naturally print in the same plane as standard tiles.

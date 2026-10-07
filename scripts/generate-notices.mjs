@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 // Include shipped UI/font dependencies and their dependency notices. Build-only
 // tools and peer dependencies are deliberately outside this distribution list.
 const roots = [
+  '@tauri-apps/api',
   '@fontsource/inter',
   '@fontsource/ibm-plex-mono',
   '@lucide/svelte',

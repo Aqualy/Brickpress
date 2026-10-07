@@ -26,14 +26,11 @@ export function exportDimensions(doc: PressDocument, width: number) {
     throw new Error('Use dimensions up to 12,000 px and 40 megapixels.');
   return { width, height };
 }
-export function exportSvg(doc: PressDocument, options: ExportOptions) {
+export function svgBlob(doc: PressDocument, options: ExportOptions) {
   exportDimensions(doc, options.width);
-  downloadBlob(
-    new Blob([renderSvg(doc, options)], { type: 'image/svg+xml' }),
-    `${filename(doc.name)}-${options.mode}.svg`
-  );
+  return new Blob([renderSvg(doc, options)], { type: 'image/svg+xml' });
 }
-export async function exportPng(doc: PressDocument, options: ExportOptions) {
+export async function pngBlob(doc: PressDocument, options: ExportOptions) {
   const { height } = exportDimensions(doc, options.width);
   const svg = renderSvg(doc, options);
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
@@ -56,8 +53,15 @@ export async function exportPng(doc: PressDocument, options: ExportOptions) {
         'image/png'
       )
     );
-    downloadBlob(blob, `${filename(doc.name)}-${options.mode}.png`);
+    return blob;
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+/** Browser wrappers retained for callers outside the editor's platform adapter. */
+export function exportSvg(doc: PressDocument, options: ExportOptions) {
+  downloadBlob(svgBlob(doc, options), `${filename(doc.name)}-${options.mode}.svg`);
+}
+export async function exportPng(doc: PressDocument, options: ExportOptions) {
+  downloadBlob(await pngBlob(doc, options), `${filename(doc.name)}-${options.mode}.png`);
 }
