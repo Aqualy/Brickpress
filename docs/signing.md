@@ -1,8 +1,44 @@
 # Signing Brickpress
 
-Provider details checked on 7 October 2026. The current installer workflow
-builds unsigned private test packages. Signing has not been configured, and no
-publisher account or certificate has been purchased by this project.
+Provider details checked on 7 October 2026. Brickpress follows a zero-budget
+distribution plan: unsigned Windows installers, ad hoc signed macOS applications,
+and Linux packages. No publisher account or certificate has been purchased.
+
+## Current plan: no paid signing
+
+- **Windows:** distribute the NSIS installer without Authenticode signing.
+  Windows can show an unknown publisher and SmartScreen warnings. Some managed
+  devices block these downloads. A self-signed certificate would still require
+  users to change certificate trust; it does not solve public publisher trust.
+- **macOS:** `src-tauri/tauri.macos.conf.json` sets `signingIdentity` to `-`.
+  Tauri applies a free ad hoc signature, including on Apple Silicon. This does
+  not verify a publisher identity or notarize the application. Users may need
+  **System Settings → Privacy & Security → Open Anyway** after trying to launch
+  a trusted download. See [Tauri's ad hoc signing instructions](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing).
+- **Linux:** distribute AppImage and Debian packages directly. Paid certificates
+  are not required for these downloads.
+
+The private installer workflow places `SHA256SUMS.txt` beside each platform's
+packages. On macOS/Linux, run `shasum -a 256 -c SHA256SUMS.txt` from the extracted
+artifact directory. On Windows, use `Get-FileHash -Algorithm SHA256` for the
+installer and compare the result with the manifest. These checks detect changed
+bytes; an unsigned checksum does not establish a verified publisher identity.
+
+Keep GitHub Actions paid usage disabled (a $0 spending limit). Standard hosted
+runners in a private repository consume the account's included allowance; they
+are not unlimited free builds. Stop or postpone builds if the allowance is
+exhausted. No release is published automatically, and the repository remains
+private until public distribution is explicitly requested.
+
+There is a possible free Windows Store route: add **MSIX** packaging, enroll in
+the Store's free developer program, and pass certification. Microsoft signs
+certified MSIX packages. Brickpress currently produces NSIS EXE installers, so
+this needs separate implementation and submission. The Store's EXE/MSI route
+still requires publisher signing. See
+[Microsoft's comparison](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
+
+The paid setup below is reference material for a later budget change; it is not
+required for the current plan.
 
 Signing attaches a verified publisher identity and a tamper-evident signature
 to a build. A timestamp preserves signature validity after the signing

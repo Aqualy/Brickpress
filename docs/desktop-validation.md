@@ -69,8 +69,12 @@ by its uninstaller after testing. User projects and application data are kept.
 
 - macOS Apple Silicon/Intel and Linux builds, native smoke runs, actual dialogs,
   and installation are configured in GitHub Actions but have not been executed
-  from this Windows workspace. The workflows are local changes and must be
-  pushed before they can run.
+  from this Windows workspace. Hosted tests are held pending confirmation that
+  paid Actions usage is disabled; the source push skips automatic CI.
+- The zero-budget macOS configuration has a free ad hoc signature. Its merged
+  Tauri configuration was checked locally; signing and Gatekeeper behavior still
+  require a macOS build and installation check. The installer checksum generator
+  matched PowerShell's SHA-256 result for the existing Windows installer.
 - Real dialog Save/Discard outcomes, read-only destinations, interactive window
   position/size/maximized-state restoration, and unsigned OS prompts need the
   documented manual checks on each platform. Cancellation has been checked on
@@ -86,4 +90,6 @@ by its uninstaller after testing. User projects and application data are kept.
 No release is published automatically. Private installer artifacts require the
 manually triggered workflow. Mobile, automatic updates, signing/notarization,
 public distribution, OS associations, recent files, multiple document windows,
-and automatic browser-profile migration remain deferred.
+and automatic browser-profile migration remain deferred. Paid publisher signing
+is not part of the zero-budget plan; macOS ad hoc signing does not verify a
+publisher identity or provide notarization.

@@ -36,7 +36,7 @@ Third-party notices**. Ordinary `npm run build` continues to build the browser.
 
 Outputs are under `src-tauri/target/release/bundle/`. Select individual formats:
 
-For public distribution, see the [publisher signing walkthrough](signing.md).
+For the zero-budget distribution plan, see the [signing guide](signing.md).
 
 ```sh
 npm run desktop:build -- --bundles nsis
@@ -46,7 +46,8 @@ npm run desktop:build -- --bundles appimage,deb
 ```
 
 Cross-compiling does not replace the target OS's packaging tools. Build each
-installer on its OS using the workflow below. Test builds are unsigned.
+installer on its OS using the workflow below. Windows builds are unsigned;
+macOS builds use a free ad hoc signature and are not notarized.
 
 ## Private installers and installation
 
@@ -54,20 +55,23 @@ Run **Actions → Private test installers → Run workflow** in the private GitH
 repository. The workflow first runs browser and native checks, then uploads NSIS,
 Apple Silicon/Intel DMG, AppImage and Debian installers as private Actions
 artifacts for 14 days. It never creates a release or changes repository visibility.
-Download and extract the artifact for your OS.
+Download and extract the artifact for your OS. Each artifact contains
+`SHA256SUMS.txt`; see the signing guide for verification commands. Keep paid
+GitHub Actions usage disabled to stay within the included private-repository
+allowance without charges.
 
 - Windows: run the NSIS setup executable. It installs for the current user;
   WebView2 is detected by the installer. Unsigned builds can show SmartScreen:
   after verifying the artifact's origin, use **More info → Run anyway**.
-- macOS: mount the appropriate DMG and drag Brickpress to Applications. Unsigned,
-  unnotarized test builds can be blocked by Gatekeeper. For a trusted private
+- macOS: mount the appropriate DMG and drag Brickpress to Applications. Ad hoc
+  signed, unnotarized test builds can be blocked by Gatekeeper. For a trusted private
   artifact use **System Settings → Privacy & Security → Open Anyway**.
 - Linux: make the AppImage executable and run it, or install the Debian package
   with `sudo apt install ./Brickpress_*.deb`. AppImages may require the
   distribution's FUSE compatibility package.
 
 Updates are manual: download and install the next private build. There is no
-updater service, signing, notarization, public release, or auto-publication.
+updater service, verified publisher signing, notarization, public release, or auto-publication.
 
 ## Documents and storage
 
