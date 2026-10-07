@@ -36,6 +36,8 @@ Third-party notices**. Ordinary `npm run build` continues to build the browser.
 
 Outputs are under `src-tauri/target/release/bundle/`. Select individual formats:
 
+For public distribution, see the [publisher signing walkthrough](signing.md).
+
 ```sh
 npm run desktop:build -- --bundles nsis
 npm run desktop:build -- --target aarch64-apple-darwin --bundles dmg
