@@ -59,7 +59,18 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf xvfb
       - run: npm ci
+      - uses: actions/cache@v4
+        id: license-tool
+        with:
+          path: ~/.cargo/bin/cargo-about*
+          key: cargo-about-0.9.2-${{ runner.os }}-${{ runner.arch }}
+      - uses: taiki-e/install-action@v2
+        if: steps.license-tool.outputs.cache-hit != 'true' && !(runner.os == 'macOS' && runner.arch == 'X64')
+        with:
+          tool: cargo-about@0.9.2
+          fallback: none
       - run: cargo install cargo-about --version 0.9.2 --locked --features cli
+        if: steps.license-tool.outputs.cache-hit != 'true' && runner.os == 'macOS' && runner.arch == 'X64'
       - run: npm run notices:rust
       - run: npm run build
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check

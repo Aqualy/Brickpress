@@ -552,9 +552,11 @@ describe('Brickpress native webview', () => {
     });
     await browser.waitUntil(async () => (await browser.execute(() => innerWidth)) <= 340);
     await $('[aria-label="Open Pieces"]').click();
+    await $('.piece-card').waitForDisplayed();
     assert.ok(await $('.piece-card').isDisplayed());
     await browser.keys('Escape');
     await $('[aria-label="Open Inspector"]').click();
+    await $('[aria-label="Close Inspector"]').waitForDisplayed();
     await browser.execute(() => {
       const selector = 'button,input,select,summary,h2,h3,h4,p,span,label';
       const sizes = [...document.querySelectorAll<HTMLElement>(selector)].map((element) => ({
