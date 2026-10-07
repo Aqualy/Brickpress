@@ -620,8 +620,10 @@ test('palette tabs keep headers, searches and controls aligned across desktop an
   // Resizing to the minimum panel width must preserve one 32px action row.
   await page.setViewportSize({ width: 1448, height: 960 });
   const handle = page.getByRole('separator', { name: 'Resize Pieces panel', exact: true });
+  await expect(page.locator('.palette-panel')).toBeVisible();
+  await expect(handle).toBeVisible();
   await expect
-    .poll(async () => (await page.locator('.palette-panel').boundingBox())!.width)
+    .poll(async () => (await page.locator('.palette-panel').boundingBox())?.width ?? 0)
     .toBeGreaterThan(250);
   await handle.focus();
   // Stop at the minimum width; another arrow intentionally collapses the panel.
