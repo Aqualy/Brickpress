@@ -43,6 +43,7 @@
       "icons/icon.ico"
     ],
     "resources": {
+      "../LICENSE": "LICENSE",
       "../static/THIRD_PARTY_NOTICES.txt": "THIRD_PARTY_NOTICES.txt",
       "../static/RUST_DEPENDENCY_NOTICES.txt": "RUST_DEPENDENCY_NOTICES.txt",
       "../NOTICE.md": "NOTICE.md"

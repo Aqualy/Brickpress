@@ -87,7 +87,9 @@ npm run test:e2e
 
 Brickpress is independent software. LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse Brickpress. Product references identify compatible geometry; they do not grant trademark, design or copyright rights. See [NOTICE.md](NOTICE.md) for attribution and release considerations.
 
-The project remains private and has no project-wide open-source license yet. The catalog is original work created by Tiebo (Aqualy), as recorded in `NOTICE.md`; its historical kit name does not imply LEGO Group authorship. `npm run notices` collects third-party code, font and icon licenses, and every production build includes that file. Dependency notices remain separate from the license chosen for the project's original code and catalog.
+The original Brickpress code and catalog are licensed under the [Anti-Capitalist Software License v1.4](LICENSE), copyright 2026 Tiebo (Aqualy). ACSL restricts permitted users and organizations and is not an open-source license under the usual definition; see [its authors' explanation](https://anticapitalist.software/). The repository remains private for testing.
+
+The catalog is original work created by Tiebo (Aqualy), as recorded in `NOTICE.md`; its historical kit name does not imply LEGO Group authorship. Third-party code, fonts, icons and the vendored test driver retain their own licenses. `npm run notices` includes the project license and collects dependency notices for distributed builds; ACSL does not replace those third-party licenses.
 
 ## Reference UI boundaries
 

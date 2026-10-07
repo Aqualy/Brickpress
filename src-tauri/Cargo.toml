@@ -6,6 +6,7 @@ authors = ["Aqualy"]
 edition = "2021"
 rust-version = "1.90"
 publish = false
+license-file = "../LICENSE"
 
 [lib]
 name = "brickpress_lib"

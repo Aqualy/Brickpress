@@ -19,10 +19,16 @@ its geometry was copied from Brick Architect or LDraw. The suggestion to use
 LDraw for future CAD accuracy describes a possible replacement, not the source
 of the current geometry.
 
-No project-wide open-source license has been applied yet. The original code
-and catalog remain under their owner's copyright until a license is chosen.
-Third-party notices are attribution for dependencies, not a license grant for
-the complete project. The repository currently remains private.
+The original Brickpress code and catalog are licensed under the
+[Anti-Capitalist Software License, version 1.4](LICENSE), copyright 2026 Tiebo
+(Aqualy). The license applies to the project's original work. Third-party code,
+icons, fonts and the vendored test driver retain their existing licenses.
+The repository currently remains private.
+
+ACSL has restrictions on permitted users and organizations. Its authors state
+that it is not an open-source software license; see
+[the ACSL documentation](https://anticapitalist.software/). Public availability
+of the source does not remove those restrictions.
 
 ## Dependencies and artwork
 

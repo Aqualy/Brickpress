@@ -66,15 +66,18 @@ const sections = [...packages.values()]
       `${pkg.name}@${pkg.version} (${pkg.license})\n${'-'.repeat(72)}\n${pkg.texts.join('\n\n')}`
   );
 const uiLicense = readFileSync(join(project, 'licenses', 'shadcn-svelte.txt'), 'utf8').trim();
+const projectLicense = readFileSync(join(project, 'LICENSE'), 'utf8').trim();
 const output = [
   'Brickpress third-party notices',
   'Generated from the installed versions pinned in package-lock.json. Keep these notices with distributed builds.',
-  'The supplied piece catalog has separate provenance; see NOTICE.md.',
+  'The following project license covers original Brickpress code and catalog assets only. Dependency licenses below remain unchanged. See NOTICE.md for provenance.',
+  `Brickpress project license\n${'-'.repeat(72)}\n${projectLicense}`,
   `shadcn-svelte UI foundation\n${'-'.repeat(72)}\n${uiLicense}`,
   ...sections
 ].join('\n\n');
 mkdirSync(join(project, 'static'), { recursive: true });
 writeFileSync(join(project, 'static', 'THIRD_PARTY_NOTICES.txt'), `${output}\n`, 'utf8');
+writeFileSync(join(project, 'static', 'LICENSE.txt'), `${projectLicense}\n`, 'utf8');
 console.log(
   `Collected license notices for ${packages.size} dependency packages and shadcn-svelte.`
 );
