@@ -1,32 +1,37 @@
 # Desktop validation
 
-Validation on 7 October 2026. Brickpress's browser and Tauri applications share
+Windows and repository validation on 8 October 2026; macOS/Linux and browser
+validation on 7 October 2026. Brickpress's browser and Tauri applications share
 one static frontend, the original catalog geometry, and version-1 projects.
 
 ## Completed checks
 
-| Check                                | Result                                                                                         |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| Svelte / TypeScript analysis         | 0 errors, 0 warnings                                                                           |
-| Unit tests                           | 86 passed                                                                                      |
-| Catalog validation                   | All 41 pieces valid                                                                            |
-| Browser production build             | Passed, static `build/` output                                                                 |
-| Browser Playwright scenarios         | 36 passed                                                                                      |
-| Windows native scenarios             | 17 application scenarios passed; the separate actual-dialog cancellation check passed on retry |
-| macOS Apple Silicon native scenarios | 17 passed                                                                                      |
-| macOS Intel native scenarios         | 17 passed                                                                                      |
-| Linux x64 native scenarios           | 17 passed                                                                                      |
-| Rust tests                           | 8 passed per target OS                                                                         |
-| Rust formatting                      | Passed                                                                                         |
-| Clippy                               | Passed with warnings denied, production and `desktop-e2e` features                             |
-| npm production dependency audit      | 0 reported vulnerabilities (`npm audit --omit=dev`)                                            |
+| Check                                | Result                                                                  |
+| ------------------------------------ | ----------------------------------------------------------------------- |
+| Svelte / TypeScript analysis         | 0 errors, 0 warnings                                                    |
+| Unit tests                           | 86 passed                                                               |
+| Catalog validation                   | All 41 pieces valid                                                     |
+| Browser production build             | Passed, static `build/` output                                          |
+| Browser Playwright scenarios         | 36 passed                                                               |
+| Windows native scenarios             | 18 passed, including actual Open/Save/Close dialog cancellation         |
+| macOS Apple Silicon native scenarios | 17 passed                                                               |
+| macOS Intel native scenarios         | 17 passed                                                               |
+| Linux x64 native scenarios           | 17 passed                                                               |
+| Rust tests                           | 8 passed per target OS                                                  |
+| Rust formatting                      | Passed                                                                  |
+| Clippy                               | Passed with warnings denied, production and `desktop-e2e` features      |
+| npm production dependency audit      | 0 reported vulnerabilities (`npm audit --omit=dev`)                     |
+| Rust dependency audit                | 0 vulnerability-category advisories; two open Linux dependency warnings |
+| Public repository audit              | Full Git history and current-source scans passed                        |
 
 The hosted macOS/Linux results and browser checks are available in the
 [test-installer workflow](https://github.com/Aqualy/Brickpress/actions/runs/37657752095).
-Windows checks ran locally using WebView2. The optional real Windows dialog helper
-had a transient UI Automation process-token error after the application scenarios
-passed; an isolated rerun passed. The corrected narrow-layout scenario also
-passed separately on Windows.
+Windows checks ran locally using WebView2. The complete native suite, including
+the actual-dialog cancellation helper and narrow-layout scenario, passed on
+8 October. Clippy and the hosted/browser results above are from 7 October; the
+application source and dependency lockfiles did not change between those builds.
+See [the repository audit](repository-audit.md) and [security policy](../SECURITY.md)
+for scan scope and the open dependency advisories.
 
 ## Editor and native coverage
 
@@ -69,10 +74,14 @@ granting filesystem or shell access.
 ## Test installers
 
 The [v1.0.1 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1)
-contains four installers built from `88ee3d19ddb765353f74722d68379a27c982892a`:
+contains five installers. The macOS/Linux packages were built from
+`88ee3d19ddb765353f74722d68379a27c982892a`; Windows was built from
+`2499a3e94c3aadc1163c6833c8029e1c18f216ee`. Their application source and lockfiles
+are identical; the later commit prepares the public repository and documentation.
 
 | Target              | Installer                         | Size in bytes |
 | ------------------- | --------------------------------- | ------------: |
+| Windows x64         | `Brickpress_1.0.1_x64-setup.exe`  |     3,713,876 |
 | macOS Apple Silicon | `Brickpress_1.0.1_aarch64.dmg`    |     9,308,458 |
 | macOS Intel         | `Brickpress_1.0.1_x64.dmg`        |     9,475,566 |
 | Linux x64           | `Brickpress_1.0.1_amd64.AppImage` |    84,519,416 |
@@ -87,21 +96,27 @@ version/architecture, application icons, desktop entry and bundled project,
 JavaScript and Rust license notices. Interactive installation remains a manual
 check. Regular installers exclude the embedded test driver.
 
-The previous [Windows v1.0.0 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.0)
-remains separate. Its branded NSIS installer is 3,387,715 bytes, with SHA-256:
+The Windows v1.0.1 NSIS installer has SHA-256:
 
 ```text
-33ff8cfc2249e9050eefcc77239ace97b8e32fe2fe61b3643351c4bc79d6a530
+8061904c5ac852463f13f711b5acbc818650125cbd191406ccb056cb019eeddc
 ```
 
-The preceding Windows install/uninstall smoke verified bundled notices, launch,
-single-instance focus, recovery flush and clean close. The newly branded setup
-and uninstaller icons were inspected directly from PE resources; their icon
-layers match the supplied artwork. The branded installer pages have not been
-checked interactively. User projects and application data are kept by uninstall.
+Windows application and installer PE resources report version 1.0.1 and their
+icon layers match the supplied artwork. The generated NSIS script includes the
+custom sidebar/header and all four license/notice documents. A regular production
+build produced the release artifact without the embedded test driver.
+
+The preceding v1.0.0 install/uninstall smoke verified bundled notices, launch,
+single-instance focus, recovery flush and clean close. Interactive installation
+or upgrade of the new 1.0.1 installer remains unverified; the existing local
+installation and personal application data were left intact. User projects and
+application data are kept by uninstall.
 
 ## Remaining manual checks
 
+- Install or upgrade Windows with the delivered 1.0.1 installer, inspect its
+  branded pages and unknown-publisher prompt, and check installed-app launch.
 - On macOS and Linux, test actual native pickers, interactive installation,
   security prompts, uninstall, and installed-app window-state restoration.
   Embedded-driver tests queue dialog outcomes and do not operate the OS picker UI.
@@ -111,8 +126,9 @@ checked interactively. User projects and application data are kept by uninstall.
 - Review the custom macOS DMG background and installed application icon on a Mac.
   The application uses a free ad hoc signature without publisher verification or
   notarization. Hands-on Gatekeeper behavior remains unverified.
-- Track development-only npm advisories in the native test toolchain. The regular
-  application excludes WebdriverIO, its embedded driver and debug test APIs.
+- Track development-only npm advisories and the Linux GTK dependency warnings
+  documented in [SECURITY.md](../SECURITY.md). The regular application excludes
+  WebdriverIO, its embedded driver and debug test APIs.
 
 Releases are published manually after validation. Mobile, automatic updates,
 paid publisher signing/notarization, OS associations, recent files, multiple

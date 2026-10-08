@@ -27,6 +27,8 @@ Choose a piece, switch to **Place**, and click or drag on the artboard. Switch t
 For feedback, [open an issue](https://github.com/Aqualy/Brickpress/issues) with
 your version, OS and steps to reproduce. Review screenshots and logs for personal
 information. Suspected vulnerabilities have a [private reporting route](SECURITY.md).
+The [public repository review](docs/repository-audit.md) records what was checked
+and links the remaining dependency findings.
 
 ## Editor features
 

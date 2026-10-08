@@ -55,3 +55,20 @@ The native suite uses its embedded driver, rather than browser downloads, and
 does not run in watch mode. Keep its patterns and downloaded archives trusted.
 Do not run the test tooling against arbitrary third-party archives or patterns.
 Dependency alerts remain enabled so a compatible upstream fix can be reviewed.
+
+The Cargo lockfile audit reports zero advisories in its vulnerability category,
+and two informational warnings in the Linux GTK dependency chain:
+
+- `proc-macro-error` 1.0.4 is unmaintained:
+  [RUSTSEC-2024-0370](https://rustsec.org/advisories/RUSTSEC-2024-0370.html).
+- `glib` 0.18.5 has an unsound `VariantStrIter` implementation that can cause
+  crashes when those iterator methods are used:
+  [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html).
+  The upstream fix requires `glib` 0.20 or newer; Tauri's GTK3 dependency family
+  currently uses 0.18. Brickpress does not directly use `VariantStrIter`, but
+  this does not establish that no transitive dependency can reach it.
+
+Neither package appears in the Windows production dependency graph. These
+warnings remain open for Linux and are not suppressed in the audit. Review a
+compatible upstream update before a general release; do not treat the zero
+vulnerability count as a clean bill of health for every platform.
