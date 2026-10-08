@@ -1,12 +1,44 @@
 # Brickpress
 
+A local studio for modular tile compositions and simulated letterpress impressions,
+available for Windows, macOS and Linux, with a browser edition using the same editor.
+No accounts or remote backend.
+
+## Download and try
+
+Download the [Brickpress 1.0.1 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1).
+Choose the file for your computer:
+
+| Platform               | Download                                                          |
+| ---------------------- | ----------------------------------------------------------------- |
+| Windows x64            | `Brickpress_1.0.1_x64-setup.exe`                                  |
+| Mac with Apple Silicon | `Brickpress_1.0.1_aarch64.dmg`                                    |
+| Intel Mac              | `Brickpress_1.0.1_x64.dmg`                                        |
+| Linux x64              | `Brickpress_1.0.1_amd64.AppImage` or `Brickpress_1.0.1_amd64.deb` |
+
+The release includes `SHA256SUMS.txt`. Windows builds are unsigned and macOS
+builds are not notarized, so your OS may show a security prompt. See the
+[installation instructions](docs/desktop.md) and [validation results](docs/desktop-validation.md).
+
+Choose a piece, switch to **Place**, and click or drag on the artboard. Switch to
+**Print Preview** to tune the impression, then use **Export** to save artwork.
+**Save** keeps an editable project for later. Updates are installed manually.
+
+For feedback, [open an issue](https://github.com/Aqualy/Brickpress/issues) with
+your version, OS and steps to reproduce. Review screenshots and logs for personal
+information. Suspected vulnerabilities have a [private reporting route](SECURITY.md).
+
+## Editor features
+
 The Library contains all 41 catalog shapes. Drag in Place mode to fill a path, or use arrows and Enter for keyboard placement. Ink passes can be dragged by their grips; focused grips also reorder with Up/Down. There is one Add ink pass control per view.
 
 Print controls appear only in **Print Preview**. Give the current press settings a name and choose **Save** to retain all eleven controls as a custom preset on this device. The Export tab previews the chosen design/print mode, paper background, and grid before saving.
 
 **Compatible printing heights only** in Grid settings restricts placement to shapes with standard printing heights. It does not alter the rendered impression.
 
-A local studio for modular tile compositions and simulated letterpress impressions, available in the browser and as a Tauri 2 desktop application. Built with SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte, Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas rasterizes PNG exports and normalizes fallback tracing images. No accounts or remote backend.
+Built with Tauri 2, SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte,
+Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas
+rasterizes PNG exports and normalizes fallback tracing images.
 
 AVIF tracing images use a bundled decoder when the webview lacks a native codec.
 The fallback keeps the original filename and stores a lossless PNG guide for recovery;
@@ -35,7 +67,9 @@ The production build is a static site in `build/`. Serve it with an ordinary sta
 
 See [desktop development, installation, and testing](docs/desktop.md). The browser edition and desktop edition share the editor and version-1 projects; each has separate local storage.
 
-[macOS and Linux 1.0.1 test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1) include Apple Silicon/Intel DMGs and Linux x64 AppImage/Debian packages, with SHA-256 checksums. The preceding [Windows test installer](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.0) remains available separately. See [validation results and remaining manual checks](docs/desktop-validation.md).
+[1.0.1 test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1)
+include Windows x64 NSIS, Apple Silicon/Intel DMGs and Linux x64 AppImage/Debian
+packages, with SHA-256 checksums. See [validation results and remaining manual checks](docs/desktop-validation.md).
 
 ```sh
 npm ci

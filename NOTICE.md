@@ -23,7 +23,8 @@ The original Brickpress code and catalog are licensed under the
 [Anti-Capitalist Software License, version 1.4](LICENSE), copyright 2026 Tiebo
 (Aqualy). The license applies to the project's original work. Third-party code,
 icons, fonts and the vendored test driver retain their existing licenses.
-The repository currently remains private.
+The source repository is public, and test installers are shared through GitHub
+Releases.
 
 ACSL has restrictions on permitted users and organizations. Its authors state
 that it is not an open-source software license; see
