@@ -6,15 +6,15 @@ No accounts or remote backend.
 
 ## Download and try
 
-Download the [Brickpress 1.0.1 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1).
+Download the [Brickpress 1.1.0 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0).
 Choose the file for your computer:
 
 | Platform               | Download                                                          |
 | ---------------------- | ----------------------------------------------------------------- |
-| Windows x64            | `Brickpress_1.0.1_x64-setup.exe`                                  |
-| Mac with Apple Silicon | `Brickpress_1.0.1_aarch64.dmg`                                    |
-| Intel Mac              | `Brickpress_1.0.1_x64.dmg`                                        |
-| Linux x64              | `Brickpress_1.0.1_amd64.AppImage` or `Brickpress_1.0.1_amd64.deb` |
+| Windows x64            | `Brickpress_1.1.0_x64-setup.exe`                                  |
+| Mac with Apple Silicon | `Brickpress_1.1.0_aarch64.dmg`                                    |
+| Intel Mac              | `Brickpress_1.1.0_x64.dmg`                                        |
+| Linux x64              | `Brickpress_1.1.0_amd64.AppImage` or `Brickpress_1.1.0_amd64.deb` |
 
 The release includes `SHA256SUMS.txt`. Windows builds are unsigned and macOS
 builds are not notarized, so your OS may show a security prompt. See the
@@ -74,7 +74,7 @@ The production build is a static site in `build/`. Serve it with an ordinary sta
 
 See [desktop development, installation, and testing](docs/desktop.md). The browser edition and desktop edition share the editor and version-1 projects; each has separate local storage.
 
-[1.0.1 test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1)
+[1.1.0 test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0)
 include Windows x64 NSIS, Apple Silicon/Intel DMGs and Linux x64 AppImage/Debian
 packages, with SHA-256 checksums. See [validation results and remaining manual checks](docs/desktop-validation.md).
 

@@ -88,6 +88,20 @@ async function name(value: string) {
   await browser.waitUntil(async () => (await title()).includes(value));
 }
 const commandKey = process.platform === 'darwin' ? 'Meta' : 'Control';
+let webgl2Available = false;
+async function threeReady() {
+  if (webgl2Available) {
+    await browser.waitUntil(
+      async () => (await $('.three-canvas').getAttribute('data-ready')) === 'true',
+      { timeout: 30000 }
+    );
+  } else {
+    const message = await $('.three-message[role="alert"]');
+    await message.waitForDisplayed();
+    assert.match(await message.getText(), /3D graphics are unavailable/);
+    assert.ok(await $('button*=Return to Design').isDisplayed());
+  }
+}
 async function shortcut(key: string) {
   await browser.keys([commandKey, key]);
 }
@@ -96,17 +110,52 @@ describe('Brickpress native webview', () => {
   before(async () => {
     await browser.switchToWindow('main');
     await ready();
+    // Probe the real webview independently. Renderer failures remain failures on
+    // capable devices; GPU-less runners must exercise the accessible fallback.
+    const graphics = await browser.execute(() => {
+      const canvas = document.createElement('canvas');
+      try {
+        const gl = canvas.getContext('webgl2', { antialias: true, alpha: true });
+        if (!gl) return { webgl2: false, reason: 'getContext returned null' };
+        const result = { webgl2: true, version: String(gl.getParameter(gl.VERSION)) };
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
+        return result;
+      } catch (error) {
+        return { webgl2: false, reason: String(error) };
+      }
+    });
+    webgl2Available = graphics.webgl2;
+    await mkdir(resolve('artifacts/native'), { recursive: true });
+    await writeFile(resolve('artifacts/native/graphics.json'), JSON.stringify(graphics, null, 2));
+    console.info('Native graphics capability:', graphics);
   });
   beforeEach(async () => {
     await reset();
   });
 
   it('edits the shared document in the native 3D view and restores Design', async () => {
+    if (!webgl2Available) {
+      const doc = createDocument();
+      doc.passes[0].pieces.push({
+        uid: 'fallback-piece',
+        pieceId: '3070',
+        x: 2,
+        y: 2,
+        rotation: 0,
+        seed: 1
+      });
+      await reset(doc);
+      const snapshot = await recovery();
+      await $('[aria-label="3D view"]').click();
+      await threeReady();
+      await browser.saveScreenshot(resolve('artifacts/native/three-unavailable.png'));
+      assert.deepEqual(await recovery(), snapshot);
+      await $('button*=Return to Design').click();
+      await pieceCount(1);
+      return;
+    }
     await $('[aria-label="3D view"]').click();
-    await browser.waitUntil(
-      async () => (await $('.three-canvas').getAttribute('data-ready')) === 'true',
-      { timeout: 30000 }
-    );
+    await threeReady();
     assert.equal(await $('.three-canvas').getAttribute('data-projection'), 'perspective');
     await $('[aria-label="Place Tile 1×1, 3070"]').click();
     await browser.execute(() => {
@@ -453,10 +502,7 @@ describe('Brickpress native webview', () => {
     await browser.execute(axe);
     for (const mode of ['Design', 'Print preview', '3D']) {
       await button(mode).then((b) => b.click());
-      if (mode === '3D')
-        await browser.waitUntil(
-          async () => (await $('.three-canvas').getAttribute('data-ready')) === 'true'
-        );
+      if (mode === '3D') await threeReady();
       for (const tab of ['Properties', 'Layers', 'Export']) {
         await $(`[role="tab"]=${tab}`).click();
         const violations = await browser.execute(async () => {
@@ -675,10 +721,14 @@ describe('Brickpress native webview', () => {
     await browser.waitUntil(async () => (await countSelector('.artboard filter')) >= 2000);
     await browser.saveScreenshot('artifacts/native/2000-pieces.png');
     await $('[aria-label="3D view"]').click();
-    await browser.waitUntil(
-      async () => (await $('.three-canvas').getAttribute('data-ready')) === 'true',
-      { timeout: 30000 }
-    );
+    await threeReady();
+    if (!webgl2Available) {
+      assert.deepEqual((await recovery()).passes[0].pieces, doc.passes[0].pieces);
+      await $('button*=Return to Design').click();
+      await pieceCount(2000);
+      await browser.saveScreenshot('artifacts/native/2000-pieces-fallback.png');
+      return;
+    }
     await browser.execute(() => document.querySelector<HTMLElement>('.canvas-workspace')!.focus());
     await shortcut('a');
     await browser.keys('ArrowDown');

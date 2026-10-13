@@ -1,9 +1,13 @@
 param(
     [string]$Application = 'src-tauri/target/release/brickpress.exe',
-    [string]$Installer = 'src-tauri/target/release/bundle/nsis/Brickpress_1.0.0_x64-setup.exe',
+    [string]$Installer = '',
     [string]$Icon = 'src-tauri/icons/icon.ico'
 )
 $ErrorActionPreference = 'Stop'
+if (!$Installer) {
+    $version = (Get-Content -LiteralPath 'src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json).version
+    $Installer = "src-tauri/target/release/bundle/nsis/Brickpress_${version}_x64-setup.exe"
+}
 Add-Type -AssemblyName System.Drawing
 # Read PE resources directly, avoiding Explorer's file-icon cache. Loading as a
 # data file does not start the application or installer, or install anything.
