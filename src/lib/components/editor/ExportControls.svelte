@@ -203,7 +203,7 @@
     min-height: 120px;
     height: 210px;
     padding: 8px;
-    background: #e9ebef;
+    background: var(--workspace);
     border: 1px solid var(--line);
     border-radius: 4px;
     overflow: hidden;
@@ -220,12 +220,12 @@
     min-height: 0;
   }
   .export-preview-image p {
-    font-size: 12px;
-    background: white;
+    font-size: 0.75rem;
+    background: var(--control);
     padding: 8px;
   }
   figcaption {
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: var(--muted);
     margin-top: 6px;
   }

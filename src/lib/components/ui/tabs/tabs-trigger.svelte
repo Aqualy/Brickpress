@@ -13,7 +13,7 @@
   bind:ref
   data-slot="tabs-trigger"
   class={cn(
-    'editor-tab relative flex min-h-8 min-w-0 flex-1 items-center justify-center px-2 text-[12px]',
+    'editor-tab relative flex min-h-8 min-w-0 flex-1 items-center justify-center px-2 text-[0.75rem]',
     className
   )}
   {...restProps}

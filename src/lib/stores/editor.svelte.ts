@@ -24,6 +24,7 @@ import { readTraceFile, type TraceImage, type TraceOverlay } from '../persistenc
 import type { InkPass, PlacedPiece, PressDocument } from '../types/document';
 import { platformError, type FileKind, type PlatformAdapter } from '../platform/types';
 import { parsePreferences, type SavedPrintPreset } from '../persistence/preferences';
+import type { CameraState } from '../three/types';
 
 type ClipboardPiece = { piece: PlacedPiece; color: string; name: string };
 export class Editor {
@@ -43,6 +44,17 @@ export class Editor {
   placementMirrorY = $state(false);
   tool = $state<'select' | 'place' | 'hand'>('select');
   mode = $state<'design' | 'print'>('design');
+  view = $state<'2d' | '3d'>('2d');
+  camera3D: CameraState | null = null;
+  pan2D = { x: 0, y: 0 };
+  private viewZoom: Record<'2d' | '3d', number | 'fit'> = { '2d': 'fit', '3d': 'fit' };
+  setView(view: '2d' | '3d') {
+    if (view === this.view) return;
+    this.finishPlacementStroke(true);
+    this.viewZoom[this.view] = this.zoomCommand.value;
+    this.view = view;
+    this.setZoom(this.viewZoom[view]);
+  }
   inspectorTab = $state<'properties' | 'layers' | 'export'>('properties');
   panelResetToken = $state(0);
   gridAppearance = $state<'flat' | 'embossed'>('flat');
@@ -436,8 +448,18 @@ export class Editor {
   }
   notify(message: string) {
     this.toast = message;
+    this.resumeToast();
+  }
+  pauseToast() {
+    clearTimeout(this.toastTimer);
+  }
+  resumeToast() {
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => (this.toast = ''), 3200);
+  }
+  dismissToast() {
+    this.pauseToast();
+    this.toast = '';
   }
   commit(change: (draft: PressDocument) => void) {
     this.finishPlacementStroke();

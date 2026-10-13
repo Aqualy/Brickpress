@@ -5,6 +5,7 @@
   import { Button } from './button';
   import type { Editor } from '../../stores/editor.svelte';
   import Icon from './Icon.svelte';
+  import Notification from './Notification.svelte';
   let {
     editor,
     side,
@@ -65,6 +66,7 @@
             : 'Edit properties, ink passes, and export settings.'}</Sheet.Description
         >
         {@render children()}
+        {#if open}<Notification {editor} inline />{/if}
       </section>
     {/snippet}
   </Dialog.Content>

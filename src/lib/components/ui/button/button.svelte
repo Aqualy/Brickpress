@@ -4,7 +4,7 @@
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
   export const buttonVariants = tv({
-    base: 'editor-button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[4px] text-[12px] font-normal select-none disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:shrink-0',
+    base: 'editor-button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--control-radius)] text-[0.75rem] font-normal select-none disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:shrink-0',
     variants: {
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
@@ -16,7 +16,7 @@
       },
       size: {
         default: 'min-h-8 px-2 py-1',
-        xs: 'min-h-6 px-1.5 py-0.5 text-[11px]',
+        xs: 'min-h-6 px-1.5 py-0.5 text-[0.6875rem]',
         sm: 'min-h-[30px] px-2 py-1',
         lg: 'min-h-9 px-3 py-1',
         icon: 'size-8 p-0',

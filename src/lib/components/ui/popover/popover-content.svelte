@@ -23,7 +23,7 @@
     {sideOffset}
     {align}
     class={cn(
-      'editor-popover-base z-[80] rounded-[5px] border border-border bg-white p-3 text-[12px] text-foreground',
+      'editor-popover-base z-[80] rounded-[var(--control-radius)] border border-border bg-background p-3 text-[0.75rem] text-foreground',
       className
     )}
     {...restProps}

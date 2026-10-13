@@ -28,7 +28,7 @@
     {sideOffset}
     {side}
     class={cn(
-      'z-[90] w-fit max-w-xs rounded-[5px] border border-border bg-white px-2 py-1.5 text-[11px] text-foreground',
+      'z-[90] w-fit max-w-xs rounded-[var(--control-radius)] border border-border bg-popover px-2 py-1.5 text-[0.6875rem] text-foreground shadow-[var(--floating-shadow)]',
       className
     )}
     {...restProps}

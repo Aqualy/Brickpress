@@ -12,6 +12,6 @@
 <SheetPrimitive.Overlay
   bind:ref
   data-slot="sheet-overlay"
-  class={cn('fixed inset-0 z-[60] bg-[#172033]/20', className)}
+  class={cn('fixed inset-0 z-[60] bg-[var(--overlay)]', className)}
   {...restProps}
 />

@@ -2,7 +2,7 @@
   import { tv, type VariantProps } from 'tailwind-variants';
 
   export const tabsListVariants = tv({
-    base: 'editor-tablist flex shrink-0 items-stretch border-b border-border bg-white',
+    base: 'editor-tablist flex shrink-0 items-stretch border-b border-border bg-background',
     variants: {
       variant: {
         default: '',

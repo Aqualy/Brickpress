@@ -6,6 +6,7 @@
   import Palette from '../palette/Palette.svelte';
   import Inspector from '../properties/Inspector.svelte';
   import Board from './Board.svelte';
+  import Board3D from './Board3D.svelte';
   import type { Editor } from '../../stores/editor.svelte';
   let { editor }: { editor: Editor } = $props();
   let width = $state(1448);
@@ -46,7 +47,11 @@
       aria-label="Resize Pieces panel"
     />
     <Resizable.Pane defaultSize={100 - left - right} minSize={editor.narrow ? 100 : 25} order={2}>
-      <main class="editor-center"><Board {editor} /></main>
+      <main class="editor-center">
+        {#if editor.view === '3d' && editor.mode === 'design'}<Board3D {editor} />{:else}<Board
+            {editor}
+          />{/if}
+      </main>
     </Resizable.Pane>
     <Resizable.Handle
       class={editor.narrow ? 'panel-resizer hidden' : 'panel-resizer'}

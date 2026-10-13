@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tick, untrack } from 'svelte';
+  import { tick, untrack, onDestroy } from 'svelte';
   import { getPiece, pieces } from '../../catalog/catalog';
   import { bounds, canPlace, pieceTransform } from '../../geometry/geometry';
   import { placementPath } from '../../geometry/placement-path';
@@ -15,8 +15,8 @@
   let svg: SVGSVGElement;
   let viewportWidth = $state(800),
     viewportHeight = $state(700);
-  let panX = $state(0),
-    panY = $state(0),
+  let panX = $state(untrack(() => editor.pan2D.x)),
+    panY = $state(untrack(() => editor.pan2D.y)),
     space = $state(false);
   let hover = $state.raw<{ x: number; y: number } | null>(null);
   let delta = $state.raw({ x: 0, y: 0 });
@@ -30,6 +30,10 @@
     initialPan = { x: 0, y: 0 };
   let additive = false;
   const studPixels = 32;
+  onDestroy(() => {
+    editor.pan2D = { x: panX, y: panY };
+    cancelDrag();
+  });
   const designMasks = pieces.map((piece) => designMaskMarkup(piece)).join('');
   let board = $derived(editor.doc.board);
   let fit = $derived(
@@ -136,13 +140,15 @@
       else editor.notify('No piece beneath the placement cursor.');
     }
   }
+  let firstZoomCommand = true;
   $effect(() => {
     const command = editor.zoomCommand;
     // Consume the external Fit command; normal zoom is purely derived.
-    if (command.value === 'fit') {
+    if (command.value === 'fit' && !firstZoomCommand) {
       panX = 0;
       panY = 0;
     }
+    firstZoomCommand = false;
   });
   $effect(() => {
     editor.zoomPercent = Math.round(zoom * 100);

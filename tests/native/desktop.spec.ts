@@ -101,6 +101,40 @@ describe('Brickpress native webview', () => {
     await reset();
   });
 
+  it('edits the shared document in the native 3D view and restores Design', async () => {
+    await $('[aria-label="3D view"]').click();
+    await browser.waitUntil(
+      async () => (await $('.three-canvas').getAttribute('data-ready')) === 'true',
+      { timeout: 30000 }
+    );
+    assert.equal(await $('.three-canvas').getAttribute('data-projection'), 'perspective');
+    await $('[aria-label="Place Tile 1×1, 3070"]').click();
+    await browser.execute(() => {
+      const viewport = document.querySelector<HTMLElement>('.canvas-workspace')!;
+      viewport.focus();
+      viewport.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    await browser.waitUntil(async () => (await recovery()).passes[0].pieces.length === 1);
+    const beforeCamera = await recovery();
+    await $('[aria-label="3D camera controls"]').click();
+    await button('Orthographic').then((b) => b.click());
+    assert.equal(await $('.three-canvas').getAttribute('data-projection'), 'orthographic');
+    await button('Linear perspective').then((b) => b.click());
+    assert.equal(await $('.three-canvas').getAttribute('data-projection'), 'perspective');
+    const zoom = await $('.zoom-value').getText();
+    await $('[aria-label="Orbit down"]').click();
+    assert.equal(await $('.zoom-value').getText(), zoom);
+    await button('Top').then((b) => b.click());
+    await browser.keys('Escape');
+    await mkdir(resolve('artifacts/native'), { recursive: true });
+    await browser.saveScreenshot(resolve('artifacts/native/three.png'));
+    assert.deepEqual(await recovery(), beforeCamera);
+    await button('Design').then((b) => b.click());
+    await pieceCount(1);
+    await shortcut('z');
+    await pieceCount(0);
+  });
+
   it('saves Unicode paths, updates the same file, and Save As retargets', async () => {
     await name('印刷 café');
     await chosen('印刷 café.brickpress.json');
@@ -414,11 +448,15 @@ describe('Brickpress native webview', () => {
     assert.ok(!project.includes('guide.png'));
   });
 
-  it('checks accessibility in both modes and every inspector tab', async () => {
+  it('checks accessibility in all three views and every inspector tab', async () => {
     const axe = await readFile(resolve('node_modules/axe-core/axe.min.js'), 'utf8');
     await browser.execute(axe);
-    for (const mode of ['Design', 'Print preview']) {
+    for (const mode of ['Design', 'Print preview', '3D']) {
       await button(mode).then((b) => b.click());
+      if (mode === '3D')
+        await browser.waitUntil(
+          async () => (await $('.three-canvas').getAttribute('data-ready')) === 'true'
+        );
       for (const tab of ['Properties', 'Layers', 'Export']) {
         await $(`[role="tab"]=${tab}`).click();
         const violations = await browser.execute(async () => {
@@ -636,6 +674,16 @@ describe('Brickpress native webview', () => {
     await button('Print preview').then((b) => b.click());
     await browser.waitUntil(async () => (await countSelector('.artboard filter')) >= 2000);
     await browser.saveScreenshot('artifacts/native/2000-pieces.png');
+    await $('[aria-label="3D view"]').click();
+    await browser.waitUntil(
+      async () => (await $('.three-canvas').getAttribute('data-ready')) === 'true',
+      { timeout: 30000 }
+    );
+    await browser.execute(() => document.querySelector<HTMLElement>('.canvas-workspace')!.focus());
+    await shortcut('a');
+    await browser.keys('ArrowDown');
+    assert.equal((await recovery()).passes[0].pieces[0].y, 1);
+    await browser.saveScreenshot('artifacts/native/2000-pieces-3d.png');
   });
 
   (process.platform === 'win32' && process.env.BRICKPRESS_REAL_DIALOG_TESTS === '1' ? it : it.skip)(

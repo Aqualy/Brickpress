@@ -62,6 +62,7 @@
             )}
         /></label
       >
+      <p class="menu-section-label">Document</p>
       <div class="menu-actions">
         <Button disabled={editor.documentBusy} onclick={onnew}><Icon name="file" /> New</Button
         ><Button disabled={editor.documentBusy} onclick={onopen}><Icon name="open" /> Open</Button
@@ -71,6 +72,15 @@
         ><Icon name="save" /> Save As <kbd>⇧⌘/Ctrl S</kbd></Button
       >
       <hr />
+      <p class="menu-section-label">Tools and view</p>
+      <div class="menu-command-grid">
+        <Button class="menu-action" aria-label="Switch to Select" onclick={() => tool('select')}
+          >Select <kbd>V</kbd></Button
+        >
+        <Button class="menu-action" aria-label="Switch to Place" onclick={() => tool('place')}
+          >Place <kbd>B</kbd></Button
+        >
+      </div>
       <Button class="menu-action" aria-label="Hand tool" onclick={() => tool('hand')}
         ><Icon name="hand" /> Hand tool <kbd>H</kbd></Button
       >
@@ -84,6 +94,7 @@
         ><Icon name="settings" /> Reset panel widths</Button
       >
       <hr />
+      <p class="menu-section-label">Edit</p>
       <div class="menu-actions">
         <Button disabled={!editor.selected.length} onclick={() => editor.copy()}>Copy</Button
         ><Button onclick={() => editor.paste()}>Paste</Button><Button
@@ -94,7 +105,7 @@
       <Button class="menu-action danger" onclick={() => editor.clear()}
         ><Icon name="trash" /> Clear canvas</Button
       >
-      <div class="menu-actions compact-actions">
+      <div class="menu-actions">
         <Button disabled={!editor.canUndo} onclick={() => editor.undo()}>Undo</Button><Button
           disabled={!editor.canRedo}
           onclick={() => editor.redo()}>Redo</Button
@@ -186,19 +197,37 @@
       <GridControls {editor} />
     </Popover>
   </div>
+  <div class="toolbar-document" aria-label="Current document">
+    <strong title={editor.doc.name}>{editor.doc.name}</strong>
+    <small>{editor.documentBusy ? 'Saving…' : editor.dirty ? 'Edited' : 'Saved'}</small>
+  </div>
   <div class="mode-switch" role="group" aria-label="Editor mode">
     <Button
-      class={editor.mode === 'design' ? 'active' : ''}
-      aria-pressed={editor.mode === 'design'}
-      onclick={() => (editor.mode = 'design')}>Design</Button
+      class={editor.mode === 'design' && editor.view === '2d' ? 'active' : ''}
+      aria-pressed={editor.mode === 'design' && editor.view === '2d'}
+      onclick={() => {
+        editor.setView('2d');
+        editor.mode = 'design';
+      }}>Design</Button
     >
     <Button
       class={editor.mode === 'print' ? 'active' : ''}
       aria-pressed={editor.mode === 'print'}
       onclick={() => {
+        editor.setView('2d');
         editor.mode = 'print';
         editor.selected = [];
       }}>Print preview</Button
+    >
+    <Button
+      class={editor.view === '3d' && editor.mode === 'design' ? 'active' : ''}
+      aria-pressed={editor.view === '3d' && editor.mode === 'design'}
+      aria-label="3D view"
+      onclick={() => {
+        editor.setView('3d');
+        editor.mode = 'design';
+        editor.focusCanvas();
+      }}><Icon name="cube" size={16} />3D</Button
     >
   </div>
   <div class="toolbar-group inspector-drawer-group">
@@ -248,7 +277,7 @@
     position: fixed;
     inset: 0;
     z-index: 80;
-    background: #17203333;
+    background: var(--overlay);
   }
   :global(.notices-dialog) {
     position: fixed;
@@ -261,12 +290,13 @@
     display: flex;
     flex-direction: column;
     padding: 16px;
-    background: white;
-    border: 1px solid #cbd0d8;
+    background: var(--control);
+    border: 1px solid var(--line);
     border-radius: 6px;
-    color: #172033;
+    color: var(--ink);
+    box-shadow: var(--floating-shadow);
     gap: 12px;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .notices-heading {
     display: flex;
@@ -275,7 +305,7 @@
     gap: 12px;
   }
   .notices-heading :global(h2) {
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
   }
   .notices-heading :global(button) {
@@ -283,18 +313,20 @@
     height: 32px;
     display: grid;
     place-items: center;
-    border: 1px solid #dce0e6;
-    border-radius: 4px;
+    border: 1px solid var(--control-border);
+    border-radius: var(--control-radius);
   }
   textarea {
     overflow: auto;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    font-size: 11px;
+    font-size: 0.6875rem;
     min-height: min(480px, 55dvh);
     max-height: 70dvh;
-    border: 1px solid #dce0e6;
-    border-radius: 4px;
+    border: 1px solid var(--control-border);
+    border-radius: var(--control-radius);
+    color: var(--ink);
+    background: var(--control);
     padding: 12px;
     resize: none;
     width: 100%;

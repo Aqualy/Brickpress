@@ -25,7 +25,7 @@
     bind:this={ref}
     data-slot={dataSlot}
     class={cn(
-      'editor-input min-h-8 w-full min-w-0 rounded-[4px] border border-input bg-white px-2 py-1 text-[12px] text-foreground placeholder:text-muted-foreground disabled:opacity-40',
+      'editor-input min-h-8 w-full min-w-0 rounded-[var(--control-radius)] border border-input bg-popover px-2 py-1 text-[0.75rem] text-foreground placeholder:text-muted-foreground disabled:opacity-40',
       className
     )}
     type="file"
@@ -38,7 +38,7 @@
     bind:this={ref}
     data-slot={dataSlot}
     class={cn(
-      'editor-input min-h-8 w-full min-w-0 rounded-[4px] border border-input bg-white px-2 py-1 text-[12px] text-foreground placeholder:text-muted-foreground disabled:opacity-40',
+      'editor-input min-h-8 w-full min-w-0 rounded-[var(--control-radius)] border border-input bg-popover px-2 py-1 text-[0.75rem] text-foreground placeholder:text-muted-foreground disabled:opacity-40',
       className
     )}
     {type}

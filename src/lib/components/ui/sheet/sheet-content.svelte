@@ -35,7 +35,7 @@
     data-slot="sheet-content"
     data-side={side}
     class={cn(
-      'editor-sheet fixed z-[70] flex flex-col border-border bg-white text-[12px] data-[side=right]:inset-y-0 data-[side=right]:w-[340px] data-[side=right]:max-w-full data-[side=right]:border-l data-[side=right]:right-0 data-[side=left]:inset-y-0 data-[side=left]:w-[340px] data-[side=left]:max-w-full data-[side=left]:border-r data-[side=left]:left-0 data-[side=top]:inset-x-0 data-[side=top]:border-b data-[side=top]:top-0 data-[side=bottom]:inset-x-0 data-[side=bottom]:border-t data-[side=bottom]:bottom-0',
+      'editor-sheet fixed z-[70] flex flex-col border-border bg-background text-[0.75rem] data-[side=right]:inset-y-0 data-[side=right]:w-[340px] data-[side=right]:max-w-full data-[side=right]:border-l data-[side=right]:right-0 data-[side=left]:inset-y-0 data-[side=left]:w-[340px] data-[side=left]:max-w-full data-[side=left]:border-r data-[side=left]:left-0 data-[side=top]:inset-x-0 data-[side=top]:border-b data-[side=top]:top-0 data-[side=bottom]:inset-x-0 data-[side=bottom]:border-t data-[side=bottom]:bottom-0',
       className
     )}
     {...restProps}

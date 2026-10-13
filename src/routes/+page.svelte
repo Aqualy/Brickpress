@@ -9,6 +9,7 @@
   import Toolbar from '$lib/components/editor/Toolbar.svelte';
   import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import Notification from '$lib/components/ui/Notification.svelte';
   import '../app.css';
   const editor = new Editor();
   let ready = $state(false);
@@ -335,9 +336,7 @@
     >
   </div>
 {/if}
-{#if editor.toast}<div class="toast" role="status">
-    <Icon name="info" size={16} />{editor.toast}
-  </div>{/if}
+{#if !editor.drawer}<Notification {editor} />{/if}
 
 <style>
   .startup-error {
@@ -349,18 +348,18 @@
     align-items: center;
     gap: 12px;
     padding: 12px;
-    background: white;
-    color: #172033;
-    border: 1px solid #cbd0d8;
+    background: var(--control);
+    color: var(--ink);
+    border: 1px solid var(--control-border);
     border-radius: 6px;
     font-size: 12px;
   }
   .startup-error button {
     min-height: 32px;
     padding: 4px 12px;
-    border: 1px solid #cbd0d8;
+    border: 1px solid var(--control-border);
     border-radius: 4px;
-    background: #eef2f7;
-    color: #172033;
+    background: var(--hover);
+    color: var(--ink);
   }
 </style>

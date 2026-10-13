@@ -51,7 +51,7 @@ macOS builds use a free ad hoc signature and are not notarized.
 
 ## Test installers and installation
 
-Download the [v1.0.1 Windows/macOS/Linux test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.0.1).
+Download the [v1.1.0 Windows/macOS/Linux test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0).
 The release pages include checksums and platform-specific instructions. See
 [validation](desktop-validation.md) for automated results and remaining manual checks.
 

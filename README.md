@@ -32,6 +32,11 @@ and links the remaining dependency findings.
 
 ## Editor features
 
+The editor follows your system's light or dark appearance. Compact controls, grouped
+commands, visible keyboard focus, and system fonts on macOS keep the artwork central.
+Notifications pause while hovered or focused and can be dismissed. See the
+[UI design notes](docs/ui-design.md) for the design direction and accessibility checks.
+
 The Library contains all 41 catalog shapes. Drag in Place mode to fill a path, or use arrows and Enter for keyboard placement. Ink passes can be dragged by their grips; focused grips also reorder with Up/Down. There is one Add ink pass control per view.
 
 Print controls appear only in **Print Preview**. Give the current press settings a name and choose **Save** to retain all eleven controls as a custom preset on this device. The Export tab previews the chosen design/print mode, paper background, and grid before saving.
@@ -119,7 +124,15 @@ Design output preserves separate vector paths with a constant nominal 0.2 mm sea
 
 **Export** opens the Inspector’s Export tab and supports clean vector SVG, procedural-filter print SVG, PNG at 1×/2×/4× or custom pixel width, and editable JSON. Backgrounds can be paper or transparent. Grid is excluded by default; selections, rulers and editor controls never export. PNG uses the same SVG impression renderer at the requested resolution. Exports are limited to 12,000 pixels per side and 40 megapixels to respect browser memory.
 
-SVG filter rendering differs between vector applications; use PNG for a consistent print image. This is a surface/ink simulation, not a paper deformation model or a guarantee of physical print results. PDF, manufacturing instructions and native 3D editing are outside this release.
+SVG filter rendering differs between vector applications; use PNG for a consistent print image. This is a surface/ink simulation, not a paper deformation model or a guarantee of physical print results. PDF and manufacturing instructions are outside this release.
+
+### 3D board
+
+Choose **3D** beside Design and Print Preview to edit raised catalog pieces on a studded baseplate. Pieces stay snapped to the same board plane; selection, movement, rotation, drag-to-fill, composition presets, tracing, and undo share the 2D document and its placement rules. This is a board editor, not free-form 3D stacking or a manufacturing model.
+
+Right-drag to orbit, use Hand/Space-drag or middle-drag to pan, and scroll to zoom. Middle-click a piece in Place mode samples it. The camera menu offers Linear perspective (default) and Orthographic projection, Top, Isometric, Reset, orbit and pan buttons; Alt+arrow keys orbit, and arrow keys pan with Hand selected. Orbiting keeps the viewing distance and zoom steady; Fit, projection changes, camera presets, and workspace or board resizing can reframe the board. Camera framing and projection are retained when switching views during the session and are excluded from projects and exports. Print effects remain in Print Preview; PNG/SVG exports keep their existing 2D behavior.
+
+3D loads on demand and requires WebGL2. If graphics initialization fails or the context is lost, return to Design to continue editing safely.
 
 ## Architecture and tests
 
