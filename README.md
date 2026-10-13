@@ -1,7 +1,18 @@
-# Brickpress
+<p align="center">
+  <img src="docs/assets/brickpress-logo.png" alt="Brickpress logo" width="200" height="200" />
+</p>
 
-A local studio for modular tile compositions and simulated letterpress impressions,
-available for Windows, macOS and Linux, with a browser edition using the same editor.
+<h1 align="center">Brickpress</h1>
+
+<p align="center">A local studio for brick compositions and simulated letterpress prints.</p>
+
+<p align="center">
+  <a href="https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0">Download</a> ·
+  <a href="docs/releases/v1.1.0.md">Release notes</a> ·
+  <a href="https://github.com/Aqualy/Brickpress/issues">Feedback</a>
+</p>
+
+Available for Windows, macOS and Linux, with a browser edition using the same editor.
 No accounts or remote backend.
 
 ## Download and try
