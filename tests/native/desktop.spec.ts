@@ -117,7 +117,17 @@ describe('Brickpress native webview', () => {
       try {
         const gl = canvas.getContext('webgl2', { antialias: true, alpha: true });
         if (!gl) return { webgl2: false, reason: 'getContext returned null' };
-        const result = { webgl2: true, version: String(gl.getParameter(gl.VERSION)) };
+        const version: unknown = gl.getParameter(gl.VERSION);
+        const lost = gl.isContextLost();
+        // WKWebView on some virtualized Macs returns a context object with no
+        // live backing context. A non-null object alone cannot render Three.js.
+        const usable = !lost && typeof version === 'string' && version.startsWith('WebGL 2.0');
+        const result = {
+          webgl2: usable,
+          version,
+          lost,
+          reason: usable ? null : lost ? 'context is lost' : 'WebGL 2 version unavailable'
+        };
         gl.getExtension('WEBGL_lose_context')?.loseContext();
         return result;
       } catch (error) {
