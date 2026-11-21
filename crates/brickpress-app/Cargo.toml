@@ -1,0 +1,43 @@
+[package]
+name = "brickpress-app"
+description = "Brickpress: a studio for brick compositions and simulated letterpress prints"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license-file.workspace = true
+publish.workspace = true
+
+[lib]
+name = "brickpress_app"
+path = "src/lib.rs"
+
+[[bin]]
+name = "brickpress"
+path = "src/main.rs"
+
+[dependencies]
+brickpress-core.workspace = true
+brickpress-render.workspace = true
+eframe = { version = "0.37", default-features = false, features = ["wgpu", "accesskit", "persistence", "default_fonts", "x11", "wayland"] }
+egui = "0.37"
+egui-wgpu = "0.37"
+egui_extras = { version = "0.37", default-features = false }
+rfd = "0.18"
+brickpress-mcp = { path = "../brickpress-mcp" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif", "bmp"] }
+dirs = "6"
+sha2 = "0.10"
+tempfile = "3"
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+thiserror.workspace = true
+env_logger = "0.11"
+interprocess = "2"
+glam = "0.30"
+
+[dev-dependencies]
+egui_kittest = { version = "0.37", features = ["wgpu", "snapshot", "eframe"] }
+tempfile = "3"

@@ -7,165 +7,85 @@
 <p align="center">A local studio for brick compositions and simulated letterpress prints.</p>
 
 <p align="center">
-  <a href="https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0">Download</a> ·
-  <a href="docs/releases/v1.1.0.md">Release notes</a> ·
+  <a href="docs/architecture.md">Architecture</a> ·
+  <a href="docs/mcp.md">Agents (MCP)</a> ·
   <a href="https://github.com/Aqualy/Brickpress/issues">Feedback</a>
 </p>
 
-Available for Windows, macOS and Linux, with a browser edition using the same editor.
-No accounts or remote backend.
+Brickpress 2 is a native desktop application for Windows, macOS and Linux,
+written in Rust (eframe, egui and wgpu). It has no accounts and no remote
+backend. It replaces the 1.x SvelteKit/Tauri editor. Projects, presets,
+preferences and recovery data from 1.x open unchanged.
 
-## Download and try
+## Build and run
 
-Download the [Brickpress 1.1.0 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0).
-Choose the file for your computer:
-
-| Platform               | Download                                                          |
-| ---------------------- | ----------------------------------------------------------------- |
-| Windows x64            | `Brickpress_1.1.0_x64-setup.exe`                                  |
-| Mac with Apple Silicon | `Brickpress_1.1.0_aarch64.dmg`                                    |
-| Intel Mac              | `Brickpress_1.1.0_x64.dmg`                                        |
-| Linux x64              | `Brickpress_1.1.0_amd64.AppImage` or `Brickpress_1.1.0_amd64.deb` |
-
-The release includes `SHA256SUMS.txt`. Windows builds are unsigned and macOS
-builds are not notarized, so your OS may show a security prompt. See the
-[installation instructions](docs/desktop.md) and [validation results](docs/desktop-validation.md).
-
-Choose a piece, switch to **Place**, and click or drag on the artboard. Switch to
-**Print Preview** to tune the impression, then use **Export** to save artwork.
-**Save** keeps an editable project for later. Updates are installed manually.
-
-For feedback, [open an issue](https://github.com/Aqualy/Brickpress/issues) with
-your version, OS and steps to reproduce. Review screenshots and logs for personal
-information. Suspected vulnerabilities have a [private reporting route](SECURITY.md).
-The [public repository review](docs/repository-audit.md) records what was checked
-and links the remaining dependency findings.
-
-## Editor features
-
-The editor follows your system's light or dark appearance. Compact controls, grouped
-commands, visible keyboard focus, and system fonts on macOS keep the artwork central.
-Notifications pause while hovered or focused and can be dismissed. See the
-[UI design notes](docs/ui-design.md) for the design direction and accessibility checks.
-
-The Library contains all 41 catalog shapes. Drag in Place mode to fill a path, or use arrows and Enter for keyboard placement. Ink passes can be dragged by their grips; focused grips also reorder with Up/Down. There is one Add ink pass control per view.
-
-Print controls appear only in **Print Preview**. Give the current press settings a name and choose **Save** to retain all eleven controls as a custom preset on this device. The Export tab previews the chosen design/print mode, paper background, and grid before saving.
-
-**Compatible printing heights only** in Grid settings restricts placement to shapes with standard printing heights. It does not alter the rendered impression.
-
-Built with Tauri 2, SvelteKit, Svelte 5, TypeScript, Tailwind CSS, shadcn-svelte,
-Bits UI, Paneforge, and Lucide Svelte. The artboard is custom Svelte/SVG; Canvas
-rasterizes PNG exports and normalizes fallback tracing images.
-
-AVIF tracing images use a bundled decoder when the webview lacks a native codec.
-The fallback keeps the original filename and stores a lossless PNG guide for recovery;
-the existing 20 MB and 40 megapixel limits still apply. Images stay on your device.
-
-## Run
+Install a current stable Rust toolchain (1.90 or newer), then:
 
 ```sh
-npm install
-npm run dev
+cargo run -p brickpress-app --release
 ```
 
-Open the local URL printed in the terminal. The full sidebar layout is available on desktop; below 1,000 pixels the Pieces and Inspector buttons open accessible drawers.
-
-```sh
-npm run check
-npm run validate:catalog
-npm test
-npm run build
-npm run preview
-```
-
-The production build is a static site in `build/`. Serve it with an ordinary static web server. Node 20.19 or newer is required.
-
-## Desktop application
-
-See [desktop development, installation, and testing](docs/desktop.md). The browser edition and desktop edition share the editor and version-1 projects; each has separate local storage.
-
-[1.1.0 test installers](https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0)
-include Windows x64 NSIS, Apple Silicon/Intel DMGs and Linux x64 AppImage/Debian
-packages, with SHA-256 checksums. See [validation results and remaining manual checks](docs/desktop-validation.md).
-
-```sh
-npm ci
-cargo install cargo-about --version 0.9.2 --locked --features cli
-npm run desktop:dev
-npm run desktop:build
-```
-
-Desktop Save updates the opened project file. Save As chooses another location, and Ctrl/Command-Shift-S uses the same command. New, Open and Close protect changed documents with Save / Discard / Cancel. Export project creates a separate copy. Restored recovery documents are unsaved and ask for a save location. Native file access is limited to files explicitly selected in a system dialog.
+On Linux, install the windowing development packages first, for example
+`libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev`.
+Installers for 2.0 are not published yet. The
+[1.1.0 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0)
+remains available.
 
 ## Working in the studio
 
-- Browse all 41 pieces in one library, using search and categories to narrow the catalog. Thumbnails preview the active ink. Click the board to stamp a piece, or drag it from the palette. Choosing a piece focuses the artboard: arrows move the placement cursor, Enter stamps, and **R** rotates.
-- In **Place** mode, middle-click an existing piece to pick its shape, rotation and reflections, keeping the active ink. For keyboard sampling, use arrows to move the placement cursor over a piece, then press **I**. Sampling also works on locked passes and changes only the placement tool. Middle-drag empty space, or use **H** / Space-drag, to pan.
-- The palette’s **Presets** tab saves all visible pieces or just the selection as a named composition. Empty margins are trimmed; ink colors, pass order, rotations and reflections are preserved. Drag a preset onto any project, or choose it and use arrows, **R**, and Enter. Pieces keep their stud dimensions. The board is never resized; placements that do not fit, collide, or violate physical mode are rejected without partial insertion. A successful placement is one undoable transaction. Rename, delete, import, and export presets from the library controls.
-- **Grid → Tracing image** loads a PNG, JPEG, WebP, GIF, AVIF or BMP beneath the pieces. Adjust opacity and visibility; unlock position to edit X, Y and width in studs, or fit and center the guide. Image proportions stay fixed. Tracing images are saved in IndexedDB in the browser and in application data on desktop, and recovered on reload; New/Open clears the current guide. They are hidden in Print Preview and excluded from project, SVG and PNG exports. Supported images are limited to 20 MB and 40 megapixels.
-- **V** selects, **B** places and **H** pans. Shift-click or Shift-drag adds to selection; dragging empty board space or the surrounding workspace creates a box selection. Arrows move selected pieces one stud; Shift-arrows move four studs.
-- **R** rotates a selection. Delete/Backspace deletes; Ctrl/Command-D duplicates; Ctrl/Command-C/V copies and pastes; Ctrl/Command-A selects all unlocked visible pieces.
-- Ctrl/Command-Z undoes; Ctrl/Command-Shift-Z redoes. Dragging commits exactly one history entry. History keeps the last 100 document transactions.
-- In **Place** mode, click and drag to fill each grid cell along the pointer path. Fast movement fills intermediate cells; occupied or out-of-bounds placements are skipped. Retracing within one stroke avoids duplicate pieces, even with overlap enabled. **Undo** removes the whole stroke; **Escape** cancels it. Presets still place as a single composition.
-- Space-drag pans. **H** plus arrows pans with the keyboard. The wheel zooms around the pointer. Size and zoom controls sit below the canvas; the corner icon fits the artboard, the percentage button resets to 100%, and the main menu includes 200%.
-- Drag the separators to resize desktop panels, or focus a separator and use the arrow keys. **Reset panel widths** in the main menu restores the reference proportions. Below 1,000 pixels the same panels become modal drawers, keeping inspector choices intact.
-- Each color is an ink pass. Recoloring selected pieces moves them into a matching or new pass. Use pass actions to recolor, lock, reorder, or delete. Names can be edited directly; expand passes in **Layers** to select individual pieces.
-- **Properties** contains inks, passes, and paper. In **Print Preview**, it also shows four primary print controls and named presets. Open **Advanced print settings** for the other seven controls and reseeding. Registration error displays the maximum per-axis offset in millimeters, using the existing normalized simulation parameter.
-- The inspector’s **Export** tab contains PNG, SVG, and project export options. Selection actions appear in **Properties**, or above the canvas when that section is unavailable. Save status appears in the footer.
-- **Grid** contains style, intervals, symmetry, overlap, and **Compatible printing heights only**. Optional embossed studs are a Design-mode editor guide. The appearance preference is saved separately from projects and never included in exports; Flat remains the default.
-- **Compatible printing heights only** permits pieces with standard, one-plate printing surfaces. The two non-standard-height pieces stay visible but disabled in the palette. Existing non-standard pieces must be removed before enabling that constraint.
-- Optional symmetry previews mirrored placements and creates pieces only when stamped. Explicit overlap can be enabled; it cannot be disabled until overlapping pieces are separated.
+- **Pieces:** choose a shape in the Library, press **B** (Place) and click or
+  drag on the board. A drag fills every cell along the path. **R** rotates.
+  **V** selects, **H** or Space-drag pans, and the wheel zooms at the pointer.
+  **Esc** cancels placing, a stroke or the selection.
+- **Inks:** each colour is an ink pass. Passes print in order and overprint
+  each other.
+- **Presets:** save the board or a selection as a preset. You can place it in
+  the current project, or open it as a new project of its own.
+- **Tabs:** several projects can be open at once. **Ctrl/⌘ W** closes a tab and
+  **Ctrl+Tab** switches. Unsaved tabs are recovered after a crash.
+- **Print:** shows the simulated letterpress impression. Eleven press controls
+  and six presets set ink, pressure, wear, paper tooth and registration. The
+  simulation is seeded, so a project prints the same way every time.
+- **3D:** shows and edits the board as raised pieces on a studded baseplate.
+- **Export:** PNG up to 12,000 px per side, and SVG. Design SVGs are pure
+  vector. Print SVGs keep the vector pieces.
+- **Commands:** every command, with its shortcut, is in the menus and the
+  command palette (**Ctrl/⌘ K**).
 
-## Files and recovery
+Projects are version-1 `.brickpress.json` files. Legacy `.legopress.json`
+files also open. Tracing images (PNG, JPEG, WebP, GIF or BMP, up to 20 MB and
+40 megapixels) stay on your device and are never part of a project or an
+export.
 
-Browser **Save** downloads an editable `.brickpress.json` file containing all geometry references, positions, rotations, mirror flags, piece seeds, pass seeds, swatches, paper and print settings. Desktop **Save** writes the active selected file, and **Save As** chooses a new location. **Open** also accepts legacy `.legopress.json` files and validates a project before replacing the current document. The version 1 format and legacy browser storage keys remain compatible, so existing projects and autosaves are preserved. New documents prompt when file-unsaved changes exist.
+## Agents
 
-Changes also autosave to this browser's localStorage. Reloading recovers the most recent document. Keep a project file for durable storage: clearing browser data removes device autosaves. Copy/paste uses an editor-local clipboard.
+`brickpress mcp` is a Model Context Protocol server. It lets an agent such as
+Claude compose boards, render previews, and save or export the result.
+`brickpress mcp --live` drives the open window instead, after you allow it in
+Help ▸ Allow Agent Connections. See [docs/mcp.md](docs/mcp.md).
 
-Composition presets are stored separately from projects in this browser and remain available across New/Open. Export the `.brickpress-presets.json` library for backup or import it on another device. Clearing browser data removes both the preset library and tracing guide.
-
-## Rendering and exports
-
-The canonical catalog is imported directly from `lego-letterpress-kit/lego-letterpress-kit/letterpress-pieces.json`; the original kit remains intact. Its geometry, fill rules, `gridMask`, allowed rotations, height flags and surface scale are used throughout. Malformed entries are omitted with a warning. Approximate catalog geometry is identified in the palette and selection information.
-
-Placements use the top-left of the **rotated footprint**. Geometry rotates around its logical center. When a non-square piece changes footprint parity, its origin snaps to the nearest whole stud; half-stud centers cannot always be preserved on an integer grid. Collision uses cached rotated/mirrored masks to find nearby pieces, then compares the catalog SVG surfaces, including curved cutouts. Surface checks use the renderer’s nominal piece gap and cache results for repeated placements.
-
-Design output preserves separate vector paths with a constant nominal 0.2 mm seam. Shared SVG masks inset every straight and curved edge by 0.1 mm, keeping placement previews, the artboard and transparent design exports consistent regardless of piece size. Print output retains the catalog surface scale and gives **every piece its own seeded SVG filter**, combining procedural high-frequency tooth/dropout, low-frequency coverage variation, erosion, displacement and pressure-dependent opacity. A separate seeded offset applies to each whole color pass. Paper grain and fibers are procedural and do not distress the composition. All eleven press controls and six presets modify these rendering parameters.
-
-**Export** opens the Inspector’s Export tab and supports clean vector SVG, procedural-filter print SVG, PNG at 1×/2×/4× or custom pixel width, and editable JSON. Backgrounds can be paper or transparent. Grid is excluded by default; selections, rulers and editor controls never export. PNG uses the same SVG impression renderer at the requested resolution. Exports are limited to 12,000 pixels per side and 40 megapixels to respect browser memory.
-
-SVG filter rendering differs between vector applications; use PNG for a consistent print image. This is a surface/ink simulation, not a paper deformation model or a guarantee of physical print results. PDF and manufacturing instructions are outside this release.
-
-### 3D board
-
-Choose **3D** beside Design and Print Preview to edit raised catalog pieces on a studded baseplate. Pieces stay snapped to the same board plane; selection, movement, rotation, drag-to-fill, composition presets, tracing, and undo share the 2D document and its placement rules. This is a board editor, not free-form 3D stacking or a manufacturing model.
-
-Right-drag to orbit, use Hand/Space-drag or middle-drag to pan, and scroll to zoom. Middle-click a piece in Place mode samples it. The camera menu offers Linear perspective (default) and Orthographic projection, Top, Isometric, Reset, orbit and pan buttons; Alt+arrow keys orbit, and arrow keys pan with Hand selected. Orbiting keeps the viewing distance and zoom steady; Fit, projection changes, camera presets, and workspace or board resizing can reframe the board. Camera framing and projection are retained when switching views during the session and are excluded from projects and exports. Print effects remain in Print Preview; PNG/SVG exports keep their existing 2D behavior.
-
-3D loads on demand and requires WebGL2. If graphics initialization fails or the context is lost, return to Design to continue editing safely.
-
-## Architecture and tests
-
-`src/lib/catalog`, `geometry`, `history`, `persistence`, `printing` and `export` contain independently testable logic. The generated shadcn-svelte foundation lives in `src/lib/components/ui`. Its buttons, inputs, tabs, popovers, sheets, and resizable panels use custom compact styling rather than the registry theme. Bits UI directly handles palette tooltips and persistent drawer content; Paneforge owns panel resizing. `Icon.svelte` maps interface names to Lucide icons. Tailwind is compiled through its Vite plugin.
-
-A per-page `Editor` class owns immutable document transactions and reactive interaction state. Palette, canvas, properties, paper, press settings, layers and export are separate Svelte components. Keyed piece components and transient drag transforms keep pointer movement out of document history and autosave.
-
-Unit tests cover the supplied catalog, lookup and malformed entries, footprint/mask rotation, collisions, mirrored placements, serialization, validation, undo/redo, deterministic noise, pass offsets and SVG exports. Browser tests cover all 41 pieces, core editing, workspace marquee selection, multiple selections, passes, physical mode, symmetry, save/load/recovery, PNG/SVG output, responsive layout down to 320 CSS pixels, keyboard placement, tab and popover focus, pointer and keyboard panel resizing, nested drawer popovers, canvas zoom, independent stud guides, accessibility scans, and a 2,000-piece document.
+## Development
 
 ```sh
-npx playwright install chromium
-npm run test:e2e
+cargo test --workspace     # unit, 1.x parity, GPU render, UI and MCP tests
+cargo fmt --all && cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-Brickpress is independent software. LEGO® is a trademark of the LEGO Group, which does not sponsor, authorize or endorse Brickpress. Product references identify compatible geometry; they do not grant trademark, design or copyright rights. See [NOTICE.md](NOTICE.md) for attribution and release considerations.
+See [docs/architecture.md](docs/architecture.md) for the crate layout, the
+renderer and the tests.
 
-The original Brickpress code and catalog are licensed under the [Anti-Capitalist Software License v1.4](LICENSE), copyright 2026 Tiebo (Aqualy). ACSL restricts permitted users and organizations and is not an open-source license under the usual definition; see [its authors' explanation](https://anticapitalist.software/). Test installers are distributed as GitHub prereleases.
+## Licence and notices
 
-The catalog is original work created by Tiebo (Aqualy), as recorded in `NOTICE.md`; its historical kit name does not imply LEGO Group authorship. Third-party code, fonts, icons and the vendored test driver retain their own licenses. `npm run notices` includes the project license and collects dependency notices for distributed builds; ACSL does not replace those third-party licenses.
+Brickpress is independent software. LEGO® is a trademark of the LEGO Group,
+which does not sponsor, authorize or endorse Brickpress. Product references
+identify compatible geometry; they do not grant trademark, design or copyright
+rights. See [NOTICE.md](NOTICE.md) for attribution and release considerations.
 
-## Reference UI boundaries
-
-The editor follows the supplied Figma-style interface without simulated window chrome. Existing project artwork, ink colors, paper presets, dimensions, and export rendering remain compatible. A5/A-series page sizing and browser fullscreen are deferred: current size presets and Fit remain available. Ink passes support drag reordering and keyboard reorder commands.
-
-Accessibility targets WCAG 2.2 AA with keyboard editing, Bits UI popovers and modal drawers, focus restoration, labels, contrast, and non-color state indicators. Browser tests run axe scans across both modes, all inspector tabs, menus, and narrow drawers; manual visual and keyboard checks supplement those scans.
+The original Brickpress code and catalog are licensed under the
+[Anti-Capitalist Software License v1.4](LICENSE), copyright 2026 Tiebo (Aqualy).
+ACSL restricts permitted users and organizations, and it is not an open-source
+licence under the usual definition; see
+[its authors' explanation](https://anticapitalist.software/). Third-party code,
+fonts and icons keep their own licences. Their notices are in
+`crates/brickpress-app/assets/THIRD_PARTY_NOTICES.txt`, which is bundled in the
+application (Help ▸ Third-Party Notices).
