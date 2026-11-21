@@ -1,0 +1,510 @@
+{
+  "version": 1,
+  "name": "A study in bloom",
+  "board": {
+    "width": 16,
+    "height": 16
+  },
+  "paper": {
+    "preset": "Natural White",
+    "color": "#f6f4ec",
+    "grain": 0.22,
+    "tooth": 0.3,
+    "fibers": 0.16,
+    "brightness": 1,
+    "seed": 52718
+  },
+  "printSettings": {
+    "inkAmount": 0.82,
+    "pressure": 0.6,
+    "inkCoverage": 0.93,
+    "rollerConsistency": 0.72,
+    "pieceWear": 0.28,
+    "edgeWear": 0.24,
+    "paperTooth": 0.35,
+    "textureScale": 1,
+    "misalignment": 0.22,
+    "registrationError": 0.22,
+    "printRoughness": 0.32
+  },
+  "passes": [
+    {
+      "id": "starter-pass-0",
+      "name": "01 · Vermilion",
+      "color": "#ce4936",
+      "visible": true,
+      "locked": false,
+      "registrationSeed": 3719,
+      "pieces": [
+        {
+          "uid": "starter-piece-0-0",
+          "pieceId": "25269",
+          "x": 4,
+          "y": 3,
+          "rotation": 0,
+          "seed": 100562
+        },
+        {
+          "uid": "starter-piece-0-1",
+          "pieceId": "25269",
+          "x": 5,
+          "y": 3,
+          "rotation": 90,
+          "seed": 108970
+        },
+        {
+          "uid": "starter-piece-0-2",
+          "pieceId": "25269",
+          "x": 4,
+          "y": 4,
+          "rotation": 270,
+          "seed": 117231
+        },
+        {
+          "uid": "starter-piece-0-3",
+          "pieceId": "25269",
+          "x": 5,
+          "y": 4,
+          "rotation": 180,
+          "seed": 125459
+        },
+        {
+          "uid": "starter-piece-0-4",
+          "pieceId": "25269",
+          "x": 8,
+          "y": 2,
+          "rotation": 0,
+          "seed": 133817
+        },
+        {
+          "uid": "starter-piece-0-5",
+          "pieceId": "25269",
+          "x": 9,
+          "y": 2,
+          "rotation": 90,
+          "seed": 142225
+        },
+        {
+          "uid": "starter-piece-0-6",
+          "pieceId": "25269",
+          "x": 8,
+          "y": 3,
+          "rotation": 270,
+          "seed": 150486
+        },
+        {
+          "uid": "starter-piece-0-7",
+          "pieceId": "25269",
+          "x": 9,
+          "y": 3,
+          "rotation": 180,
+          "seed": 158714
+        },
+        {
+          "uid": "starter-piece-0-8",
+          "pieceId": "25269",
+          "x": 11,
+          "y": 5,
+          "rotation": 0,
+          "seed": 167013
+        },
+        {
+          "uid": "starter-piece-0-9",
+          "pieceId": "25269",
+          "x": 12,
+          "y": 5,
+          "rotation": 90,
+          "seed": 175421
+        },
+        {
+          "uid": "starter-piece-0-10",
+          "pieceId": "25269",
+          "x": 11,
+          "y": 6,
+          "rotation": 270,
+          "seed": 183682
+        },
+        {
+          "uid": "starter-piece-0-11",
+          "pieceId": "25269",
+          "x": 12,
+          "y": 6,
+          "rotation": 180,
+          "seed": 191910
+        }
+      ]
+    },
+    {
+      "id": "starter-pass-1",
+      "name": "02 · Botanical",
+      "color": "#3d634b",
+      "visible": true,
+      "locked": false,
+      "registrationSeed": 11890,
+      "pieces": [
+        {
+          "uid": "starter-piece-1-0",
+          "pieceId": "3069",
+          "x": 4,
+          "y": 6,
+          "rotation": 0,
+          "seed": 200616
+        },
+        {
+          "uid": "starter-piece-1-1",
+          "pieceId": "3069",
+          "x": 4,
+          "y": 7,
+          "rotation": 0,
+          "seed": 208824
+        },
+        {
+          "uid": "starter-piece-1-2",
+          "pieceId": "3069",
+          "x": 4,
+          "y": 8,
+          "rotation": 0,
+          "seed": 217032
+        },
+        {
+          "uid": "starter-piece-1-3",
+          "pieceId": "3069",
+          "x": 4,
+          "y": 9,
+          "rotation": 0,
+          "seed": 225240
+        },
+        {
+          "uid": "starter-piece-1-4",
+          "pieceId": "3069",
+          "x": 4,
+          "y": 10,
+          "rotation": 0,
+          "seed": 233448
+        },
+        {
+          "uid": "starter-piece-1-5",
+          "pieceId": "3069",
+          "x": 4,
+          "y": 11,
+          "rotation": 0,
+          "seed": 241656
+        },
+        {
+          "uid": "starter-piece-1-6",
+          "pieceId": "25269",
+          "x": 3,
+          "y": 7,
+          "rotation": 180,
+          "seed": 249832
+        },
+        {
+          "uid": "starter-piece-1-7",
+          "pieceId": "25269",
+          "x": 6,
+          "y": 8,
+          "rotation": 270,
+          "seed": 258511
+        },
+        {
+          "uid": "starter-piece-1-8",
+          "pieceId": "3069",
+          "x": 8,
+          "y": 5,
+          "rotation": 0,
+          "seed": 266635
+        },
+        {
+          "uid": "starter-piece-1-9",
+          "pieceId": "3069",
+          "x": 8,
+          "y": 6,
+          "rotation": 0,
+          "seed": 274843
+        },
+        {
+          "uid": "starter-piece-1-10",
+          "pieceId": "3069",
+          "x": 8,
+          "y": 7,
+          "rotation": 0,
+          "seed": 283051
+        },
+        {
+          "uid": "starter-piece-1-11",
+          "pieceId": "3069",
+          "x": 8,
+          "y": 8,
+          "rotation": 0,
+          "seed": 291259
+        },
+        {
+          "uid": "starter-piece-1-12",
+          "pieceId": "3069",
+          "x": 8,
+          "y": 9,
+          "rotation": 0,
+          "seed": 299467
+        },
+        {
+          "uid": "starter-piece-1-13",
+          "pieceId": "3069",
+          "x": 8,
+          "y": 10,
+          "rotation": 0,
+          "seed": 307675
+        },
+        {
+          "uid": "starter-piece-1-14",
+          "pieceId": "3069",
+          "x": 8,
+          "y": 11,
+          "rotation": 0,
+          "seed": 315883
+        },
+        {
+          "uid": "starter-piece-1-15",
+          "pieceId": "25269",
+          "x": 7,
+          "y": 6,
+          "rotation": 180,
+          "seed": 324042
+        },
+        {
+          "uid": "starter-piece-1-16",
+          "pieceId": "25269",
+          "x": 10,
+          "y": 7,
+          "rotation": 270,
+          "seed": 332721
+        },
+        {
+          "uid": "starter-piece-1-17",
+          "pieceId": "3069",
+          "x": 11,
+          "y": 8,
+          "rotation": 0,
+          "seed": 340786
+        },
+        {
+          "uid": "starter-piece-1-18",
+          "pieceId": "3069",
+          "x": 11,
+          "y": 9,
+          "rotation": 0,
+          "seed": 348994
+        },
+        {
+          "uid": "starter-piece-1-19",
+          "pieceId": "3069",
+          "x": 11,
+          "y": 10,
+          "rotation": 0,
+          "seed": 357202
+        },
+        {
+          "uid": "starter-piece-1-20",
+          "pieceId": "3069",
+          "x": 11,
+          "y": 11,
+          "rotation": 0,
+          "seed": 365410
+        },
+        {
+          "uid": "starter-piece-1-21",
+          "pieceId": "25269",
+          "x": 10,
+          "y": 9,
+          "rotation": 180,
+          "seed": 373620
+        },
+        {
+          "uid": "starter-piece-1-22",
+          "pieceId": "25269",
+          "x": 13,
+          "y": 10,
+          "rotation": 270,
+          "seed": 382299
+        },
+        {
+          "uid": "starter-piece-1-23",
+          "pieceId": "24246",
+          "x": 3,
+          "y": 12,
+          "rotation": 0,
+          "seed": 388984
+        },
+        {
+          "uid": "starter-piece-1-24",
+          "pieceId": "24246",
+          "x": 4,
+          "y": 12,
+          "rotation": 180,
+          "seed": 397482
+        },
+        {
+          "uid": "starter-piece-1-25",
+          "pieceId": "24246",
+          "x": 5,
+          "y": 12,
+          "rotation": 0,
+          "seed": 405620
+        },
+        {
+          "uid": "starter-piece-1-26",
+          "pieceId": "24246",
+          "x": 6,
+          "y": 12,
+          "rotation": 180,
+          "seed": 414118
+        },
+        {
+          "uid": "starter-piece-1-27",
+          "pieceId": "24246",
+          "x": 7,
+          "y": 12,
+          "rotation": 0,
+          "seed": 422256
+        },
+        {
+          "uid": "starter-piece-1-28",
+          "pieceId": "24246",
+          "x": 8,
+          "y": 12,
+          "rotation": 180,
+          "seed": 430754
+        },
+        {
+          "uid": "starter-piece-1-29",
+          "pieceId": "24246",
+          "x": 9,
+          "y": 12,
+          "rotation": 0,
+          "seed": 438892
+        },
+        {
+          "uid": "starter-piece-1-30",
+          "pieceId": "24246",
+          "x": 10,
+          "y": 12,
+          "rotation": 180,
+          "seed": 447390
+        },
+        {
+          "uid": "starter-piece-1-31",
+          "pieceId": "24246",
+          "x": 11,
+          "y": 12,
+          "rotation": 0,
+          "seed": 455528
+        },
+        {
+          "uid": "starter-piece-1-32",
+          "pieceId": "24246",
+          "x": 12,
+          "y": 12,
+          "rotation": 180,
+          "seed": 464026
+        }
+      ]
+    },
+    {
+      "id": "starter-pass-2",
+      "name": "03 · Ochre",
+      "color": "#e3ae36",
+      "visible": true,
+      "locked": false,
+      "registrationSeed": 20061,
+      "pieces": [
+        {
+          "uid": "starter-piece-2-0",
+          "pieceId": "98138",
+          "x": 4,
+          "y": 5,
+          "rotation": 0,
+          "seed": 300602
+        },
+        {
+          "uid": "starter-piece-2-1",
+          "pieceId": "98138",
+          "x": 5,
+          "y": 5,
+          "rotation": 0,
+          "seed": 308920
+        },
+        {
+          "uid": "starter-piece-2-2",
+          "pieceId": "98138",
+          "x": 8,
+          "y": 4,
+          "rotation": 0,
+          "seed": 317475
+        },
+        {
+          "uid": "starter-piece-2-3",
+          "pieceId": "98138",
+          "x": 9,
+          "y": 4,
+          "rotation": 0,
+          "seed": 325793
+        },
+        {
+          "uid": "starter-piece-2-4",
+          "pieceId": "98138",
+          "x": 11,
+          "y": 7,
+          "rotation": 0,
+          "seed": 334289
+        },
+        {
+          "uid": "starter-piece-2-5",
+          "pieceId": "98138",
+          "x": 12,
+          "y": 7,
+          "rotation": 0,
+          "seed": 342607
+        },
+        {
+          "uid": "starter-piece-2-6",
+          "pieceId": "1748",
+          "x": 11,
+          "y": 3,
+          "rotation": 0,
+          "seed": 350603
+        },
+        {
+          "uid": "starter-piece-2-7",
+          "pieceId": "98138",
+          "x": 6,
+          "y": 2,
+          "rotation": 0,
+          "seed": 358142
+        },
+        {
+          "uid": "starter-piece-2-8",
+          "pieceId": "98138",
+          "x": 3,
+          "y": 9,
+          "rotation": 0,
+          "seed": 366071
+        }
+      ]
+    }
+  ],
+  "swatches": [
+    "#252a26",
+    "#ce4936",
+    "#315eae",
+    "#3d634b",
+    "#e3ae36",
+    "#795186",
+    "#e17b39"
+  ],
+  "options": {
+    "grid": "points",
+    "majorGrid": 4,
+    "allowOverlap": false,
+    "physical": false,
+    "symmetry": "off"
+  }
+}

@@ -1,6 +1,7 @@
 # Public repository audit
 
 Reviewed on 8 October 2026 while preparing Brickpress 1.0.1 for friend testing.
+The npm and Tauri findings below concern 1.x, which was removed in 2.0.0.
 The repository is public. The audit covered current tracked source, all branches
 and tags in Git history, repository settings, bundled assets and dependencies.
 
@@ -53,8 +54,8 @@ The Windows 1.0.1 production installer passed version, custom-icon and packaged
 notice checks. Release installer sizes and SHA-256 digests are verified against
 GitHub's uploaded asset metadata. The release remains a prerelease for friend
 testing. Windows is unsigned; macOS uses an ad hoc signature without notarization.
-Interactive installation and upgrade checks remain as described in
-[desktop validation](desktop-validation.md).
+Interactive installation and upgrade checks were recorded for 1.x in
+`docs/desktop-validation.md`, which was removed with the 1.x app in 2.0.0.
 
 The ACSL license and the original catalog were retained. Third-party notices
 accompany the installers; this audit does not replace review of their license

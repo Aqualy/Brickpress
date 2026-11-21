@@ -22,7 +22,7 @@ of the current geometry.
 The original Brickpress code and catalog are licensed under the
 [Anti-Capitalist Software License, version 1.4](LICENSE), copyright 2026 Tiebo
 (Aqualy). The license applies to the project's original work. Third-party code,
-icons, fonts and the vendored test driver retain their existing licenses.
+icons and fonts retain their existing licenses.
 The source repository is public, and test installers are shared through GitHub
 Releases.
 
@@ -34,9 +34,9 @@ of the source does not remove those restrictions.
 ## Dependencies and artwork
 
 Third-party code, icons and fonts retain their own licenses. Their notices are
-collected in [THIRD_PARTY_NOTICES.txt](static/THIRD_PARTY_NOTICES.txt), which is
-also included in the static build. The reusable UI foundation originates from
-[shadcn-svelte](https://github.com/huntabyte/shadcn-svelte) (MIT).
+collected in [THIRD_PARTY_NOTICES.txt](crates/brickpress-app/assets/THIRD_PARTY_NOTICES.txt),
+which is bundled in the application, and regenerated with
+`sh tools/generate-notices.sh`.
 Catalog silhouettes and procedural paper/ink effects are used in the editor;
 the supplied UI reference screenshots are not shipped as application assets.
 

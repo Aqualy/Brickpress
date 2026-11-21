@@ -1,5 +1,9 @@
 # Brickpress UI design
 
+> This review was written for the 1.x Svelte/Tauri interface, which has been
+> removed. Brickpress 2 keeps its design tokens and principles (`crates/brickpress-app/src/theme.rs`);
+> the test and validation notes below describe 1.x.
+
 ## Design review: Brickpress
 
 ### Summary
