@@ -1,0 +1,21 @@
+# Weekly update pull requests for the Rust workspace and the CI actions.
+# Minor and patch updates are grouped into one pull request per ecosystem;
+# major updates (for example a new egui or wgpu release) arrive separately,
+# since they usually need code changes.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      cargo-minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
