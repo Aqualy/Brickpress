@@ -126,3 +126,18 @@ BRICKPRESS_ARTIFACTS=/tmp/shots cargo test -p brickpress-app --test ui   # keep 
 
 GPU tests use the platform's software adapter where there is no GPU. UI tests
 drive the real app through AccessKit labels, rendered with wgpu.
+
+## Packaging
+
+`cargo packager --release -p brickpress-app` (cargo-packager 0.11) reads
+`[package.metadata.packager]` in `crates/brickpress-app/Cargo.toml`. It builds
+an NSIS installer (per user) on Windows, a DMG on macOS (ad hoc signed, macOS
+11+) and AppImage and .deb packages on Linux. Icons and installer artwork are
+in `crates/brickpress-app/packaging/`. `build.rs` embeds the icon and version
+information in the Windows executable. The identifier
+`io.github.aqualy.brickpress` is the one 1.x used.
+
+`.github/workflows/installers.yml` runs the checks, builds every package and
+installs it on a clean runner, then starts the installed binary with
+`--version`. A `v*` tag also creates a draft prerelease with the packages and
+one `SHA256SUMS.txt`.

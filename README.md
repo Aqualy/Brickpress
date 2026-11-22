@@ -27,9 +27,14 @@ cargo run -p brickpress-app --release
 
 On Linux, install the windowing development packages first, for example
 `libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev`.
-Installers for 2.0 are not published yet. The
-[1.1.0 test release](https://github.com/Aqualy/Brickpress/releases/tag/v1.1.0)
-remains available.
+To build an installer for the current platform (NSIS on Windows, a DMG on
+macOS, AppImage and .deb on Linux), install
+[cargo-packager](https://github.com/crabnebula-dev/cargo-packager) 0.11 and run
+`cargo packager --release -p brickpress-app`. The **Installers** workflow builds
+and smoke-tests all of them. Pushing a version tag creates a draft prerelease
+with the installers and `SHA256SUMS.txt` attached. Windows builds are unsigned,
+and macOS builds are ad hoc signed without notarization, so the system may warn
+before opening them.
 
 ## Working in the studio
 

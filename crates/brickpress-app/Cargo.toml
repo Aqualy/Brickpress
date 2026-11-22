@@ -41,3 +41,47 @@ glam = "0.30"
 [dev-dependencies]
 egui_kittest = { version = "0.37", features = ["wgpu", "snapshot", "eframe"] }
 tempfile = "3"
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
+# Installers: `cargo packager --release -p brickpress-app` (cargo-packager 0.11).
+# NSIS on Windows, DMG on macOS, AppImage and .deb on Linux. Paths are relative
+# to this crate. The identifier matches 1.x, so the app data folder carries over.
+[package.metadata.packager]
+productName = "Brickpress"
+identifier = "io.github.aqualy.brickpress"
+publisher = "Aqualy"
+copyright = "Copyright 2026 Tiebo (Aqualy)"
+description = "Compose brick shapes and simulate printed impressions"
+homepage = "https://github.com/Aqualy/Brickpress"
+category = "GraphicsAndDesign"
+beforePackagingCommand = "cargo build --release -p brickpress-app --locked"
+icons = ["packaging/32x32.png", "packaging/128x128.png", "packaging/icon.png", "packaging/icon.icns", "packaging/icon.ico"]
+resources = [
+  { src = "../../LICENSE", target = "LICENSE" },
+  { src = "../../NOTICE.md", target = "NOTICE.md" },
+  { src = "assets/THIRD_PARTY_NOTICES.txt", target = "THIRD_PARTY_NOTICES.txt" },
+]
+
+[package.metadata.packager.nsis]
+installMode = "currentUser"
+displayLanguageSelector = false
+installerIcon = "packaging/icon.ico"
+headerImage = "packaging/installer-header.bmp"
+sidebarImage = "packaging/installer-sidebar.bmp"
+
+[package.metadata.packager.macos]
+minimumSystemVersion = "11.0"
+# Ad hoc signature: no paid certificate, but Apple Silicon requires one.
+signingIdentity = "-"
+
+[package.metadata.packager.dmg]
+background = "packaging/dmg-background.png"
+windowSize = { width = 660, height = 400 }
+appPosition = { x = 180, y = 200 }
+appFolderPosition = { x = 480, y = 200 }
+
+[package.metadata.packager.deb]
+# Windowing and graphics are loaded at runtime, so name them explicitly.
+depends = ["libxkbcommon0", "libxkbcommon-x11-0", "libegl1", "libvulkan1"]

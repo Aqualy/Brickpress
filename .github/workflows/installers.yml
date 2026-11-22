@@ -1,0 +1,122 @@
+# Builds and smoke-tests the installers on every platform. It runs by hand for
+# test builds, and on pull requests that change the packaging. Pushing a version
+# tag (v2.0.0, ...) also creates a draft prerelease with the installers and
+# their checksums attached.
+name: Installers
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - .github/workflows/installers.yml
+      - crates/brickpress-app/Cargo.toml
+      - crates/brickpress-app/build.rs
+      - crates/brickpress-app/packaging/**
+permissions:
+  contents: read
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+  package:
+    needs: checks
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: windows-x64, formats: nsis }
+          - { os: macos-15, name: macos-arm64, formats: dmg }
+          - { os: macos-15-intel, name: macos-x64, formats: dmg }
+          # The oldest supported runner, so the Linux builds run on older glibc.
+          - { os: ubuntu-22.04, name: linux-x64, formats: 'appimage,deb' }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: installers
+      - name: Linux build and packaging prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libfuse2 file
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-packager@0.11.8
+      - name: Build installers
+        run: cargo packager --release -p brickpress-app -f ${{ matrix.formats }}
+      - name: Collect installers and checksums
+        run: |
+          mkdir dist
+          version=$(cargo metadata --no-deps --format-version 1 | python3 -c "import json,sys; print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='brickpress-app'))")
+          shopt -s nullglob
+          for f in target/release/*-setup.exe target/release/*.dmg target/release/*.AppImage target/release/*.deb; do
+            ext="${f##*.}"
+            case "$f" in *-setup.exe) ext="setup.exe" ;; esac
+            cp "$f" "dist/Brickpress_${version}_${{ matrix.name }}.${ext}"
+          done
+          ls dist | grep . >/dev/null || { echo "no installers were produced"; exit 1; }
+          cd dist && (shasum -a 256 * 2>/dev/null || sha256sum *) > "SHA256SUMS-${{ matrix.name }}.txt" && cat SHA256SUMS-*.txt
+      # Install each package the way a person would, then start the installed
+      # binary. `--version` exercises the real executable without a display.
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem dist -Filter *.exe | Select-Object -First 1
+          $dir = Join-Path $env:RUNNER_TEMP 'Brickpress'
+          Start-Process $installer.FullName -ArgumentList '/S', "/D=$dir" -Wait
+          $exe = Join-Path $dir 'brickpress.exe'
+          if (-not (Test-Path $exe)) { Get-ChildItem -Recurse $dir; throw 'brickpress.exe was not installed' }
+          foreach ($f in 'LICENSE', 'NOTICE.md', 'THIRD_PARTY_NOTICES.txt') {
+            if (-not (Test-Path (Join-Path $dir $f))) { throw "$f is missing from the installation" }
+          }
+          $out = & $exe --version | Out-String
+          Write-Output $out
+          if ($out -notmatch 'brickpress \d') { throw 'unexpected --version output' }
+      - name: Smoke test (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          dmg=$(ls dist/*.dmg | head -1)
+          mount=$(hdiutil attach "$dmg" -nobrowse -readonly | tail -1 | cut -f3-)
+          app=$(ls -d "$mount"/*.app | head -1)
+          codesign --verify --verbose "$app" || echo "::warning::the app bundle is not signed"
+          "$app/Contents/MacOS/brickpress" --version | tee version.txt
+          grep -q '^brickpress [0-9]' version.txt
+          hdiutil detach "$mount"
+      - name: Smoke test (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y ./dist/*.deb
+          brickpress --version | grep '^brickpress [0-9]'
+          chmod +x dist/*.AppImage
+          APPIMAGE_EXTRACT_AND_RUN=1 ./dist/*.AppImage --version | grep '^brickpress [0-9]'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brickpress-${{ matrix.name }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create a draft prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat dist/SHA256SUMS-*.txt > dist/SHA256SUMS.txt
+          rm dist/SHA256SUMS-*.txt
+          gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --draft --prerelease \
+            --title "Brickpress ${GITHUB_REF_NAME#v}" \
+            --notes "Test installers. Windows builds are unsigned and macOS builds are ad hoc signed without notarization, so your system may warn before opening them. Verify downloads against SHA256SUMS.txt."
